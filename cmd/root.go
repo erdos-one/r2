@@ -15,16 +15,7 @@ var rootCmd = &cobra.Command{
 Cloudflare's R2 implements the S3 API, attempting to allow users and their
 applications to migrate easily, but importantly lacks the key, simple-to-use
 features provided by the AWS CLI's s3 subcommand, as opposed to the more complex
-and verbose API calls of the s3api subcommand. This CLI fills that gap.
-
-Usage:
-  r2 <command> [parameters]
-
-To see help text for a given command, you can run:
-  r2 <command> --help
-	
-Available Commands:
-`,
+and verbose API calls of the s3api subcommand. This CLI fills that gap.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
