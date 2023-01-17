@@ -32,10 +32,8 @@ var R2ConfigFile = getConfigPath()
 
 // Format configuration string
 func configString(c config) string {
-	return fmt.Sprintf(`[%s]
-account_id=%s
-access_key_id=%s
-secret_access_key=%s`, c.Profile, c.AccountID, c.AccessKeyID, c.SecretAccessKey)
+	configTemplate := "[%s]\naccount_id=%s\naccess_key_id=%s\nsecret_access_key=%s"
+	return fmt.Sprintf(configTemplate, c.Profile, c.AccountID, c.AccessKeyID, c.SecretAccessKey)
 }
 
 // Get configuration credentials interactively
@@ -69,9 +67,14 @@ func getCredentials(profile string) config {
 }
 
 // Parse configuration file and return profiles
-func getConfig() map[string]config {
+func getConfig(createIfNotPresent bool) map[string]config {
 	// Create configuration file if it doesn't exist
 	if _, err := os.Stat(R2ConfigFile); os.IsNotExist(err) {
+		// If not creating configuration file, return empty map
+		if !createIfNotPresent {
+			return make(map[string]config)
+		}
+
 		f, err := os.Create(R2ConfigFile)
 		if err != nil {
 			log.Fatal(err)
@@ -96,9 +99,6 @@ func getConfig() map[string]config {
 
 	profilesRe := regexp.MustCompile(`\[[\w\s\]=]+`)
 	for _, p := range profilesRe.FindAllString(configString, -1) {
-		// Strip all whitespace
-		p = regexp.MustCompile(`\s`).ReplaceAllString(p, "")
-
 		// Parse profiles
 		var profile config
 
@@ -108,18 +108,21 @@ func getConfig() map[string]config {
 		}
 
 		// Get account ID
-		if regexp.MustCompile(`account_id=\w+`).MatchString(p) {
-			profile.AccountID = regexp.MustCompile(`account_id=(\w+)`).FindAllStringSubmatch(p, -1)[0][1]
+		accountIDRe := regexp.MustCompile(`account_id\s*=\s*(\w+)`)
+		if accountIDRe.MatchString(p) {
+			profile.AccountID = accountIDRe.FindAllStringSubmatch(p, -1)[0][1]
 		}
 
 		// Get access key ID
-		if regexp.MustCompile(`access_key_id=\w+`).MatchString(p) {
-			profile.AccessKeyID = regexp.MustCompile(`access_key_id=(\w+)`).FindAllStringSubmatch(p, -1)[0][1]
+		akidRe := regexp.MustCompile(`access_key_id\s*=\s*(\w+)`)
+		if akidRe.MatchString(p) {
+			profile.AccessKeyID = akidRe.FindAllStringSubmatch(p, -1)[0][1]
 		}
 
 		// Get secret access key
-		if regexp.MustCompile(`secret_access_key=\w+`).MatchString(p) {
-			profile.SecretAccessKey = regexp.MustCompile(`secret_access_key=(\w+)`).FindAllStringSubmatch(p, -1)[0][1]
+		sakRe := regexp.MustCompile(`secret_access_key\s*=\s*(\w+)`)
+		if sakRe.MatchString(p) {
+			profile.SecretAccessKey = sakRe.FindAllStringSubmatch(p, -1)[0][1]
 		}
 
 		profiles[profile.Profile] = profile
@@ -128,15 +131,42 @@ func getConfig() map[string]config {
 	return profiles
 }
 
+// List all profile names
+func listProfiles() []string {
+	// Get profiles
+	profiles := getConfig(false)
+
+	// Get profile names and sort alphabetically (default profile is always first)
+	var profileNames []string
+	for _, p := range profiles {
+		if p.Profile != "default" {
+			profileNames = append(profileNames, p.Profile)
+		}
+	}
+
+	sort.Slice(profileNames, func(i, j int) bool {
+		return strings.ToLower(profileNames[i]) < strings.ToLower(profileNames[j])
+	})
+
+	if _, ok := profiles["default"]; ok {
+		profileNames = append([]string{"default"}, profileNames...)
+	}
+
+	return profileNames
+}
+
 // Write configuration to file
 func writeConfig(c config) {
 	// Read configuration file
-	profiles := getConfig()
+	profiles := getConfig(false)
 
-	// Add profile to configuration if all credentials are provided
-	if c.Profile != "" && c.AccountID != "" && c.AccessKeyID != "" && c.SecretAccessKey != "" {
-		profiles[c.Profile] = c
+	// If not all credentials are provided, fail
+	if c.AccountID == "" || c.AccessKeyID == "" || c.SecretAccessKey == "" {
+		log.Fatal("All credentials must be provided")
 	}
+
+	// Add profile to configuration
+	profiles[c.Profile] = c
 
 	// Format profile strings and sort alphabetically (default profile is always first)
 	var configStrings []string
@@ -145,9 +175,11 @@ func writeConfig(c config) {
 			configStrings = append(configStrings, configString(p))
 		}
 	}
+
 	sort.Slice(configStrings, func(i, j int) bool {
 		return strings.ToLower(configStrings[i]) < strings.ToLower(configStrings[j])
 	})
+
 	if _, ok := profiles["default"]; ok {
 		configStrings = append([]string{configString(profiles["default"])}, configStrings...)
 	}
@@ -158,7 +190,7 @@ func writeConfig(c config) {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	_, err = f.WriteString(strings.Join(configStrings, "\n\n"))
+	_, err = f.WriteString(strings.Join(configStrings, "\n\n") + "\n")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -194,53 +226,66 @@ the --profile flag.
 Profiles are stored in ~/.r2 and can be used by passing the --profile flag to
 any command.
 
+To list available profiles, run:
+  r2 configure --list
+
 To generate an API Token, follow Cloudflare's guide at:
   https://developers.cloudflare.com/r2/data-access/s3-api/tokens/
 
 Be careful not to share your API Token credentials with anyone.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Parse configuration
-		var c config
-		var err error
-
-		// Get profile name
-		c.Profile, err = cmd.Flags().GetString("profile")
+		// Handle list flag
+		list, err := cmd.Flags().GetBool("list")
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		// Get account ID
-		c.AccountID, err = cmd.Flags().GetString("account-id")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Get access key ID
-		c.AccessKeyID, err = cmd.Flags().GetString("access-key-id")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Get secret access key
-		c.SecretAccessKey, err = cmd.Flags().GetString("secret-access-key")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Either access key ID or secret access key not passed but not both
-		if (c.AccessKeyID == "" && c.SecretAccessKey != "") || (c.AccessKeyID != "" && c.SecretAccessKey == "") {
-			log.Fatal(`Error: You must either provide both the access key ID and secret access key or
-neither to configure interactively.
-
-For more information, run:
-  r2 help configure`)
+		if list {
+			// List profiles
+			fmt.Println(strings.Join(listProfiles(), "\n"))
 		} else {
-			// Check if configuration provided
-			if c.AccountID != "" && c.AccessKeyID != "" && c.SecretAccessKey != "" {
-				writeConfig(c)
+			// Parse configuration
+			var c config
+			var err error
+
+			// Get profile name
+			c.Profile, err = cmd.Flags().GetString("profile")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// Get account ID
+			c.AccountID, err = cmd.Flags().GetString("account-id")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// Get access key ID
+			c.AccessKeyID, err = cmd.Flags().GetString("access-key-id")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// Get secret access key
+			c.SecretAccessKey, err = cmd.Flags().GetString("secret-access-key")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// Either access key ID or secret access key not passed but not both
+			if (c.AccessKeyID == "" && c.SecretAccessKey != "") || (c.AccessKeyID != "" && c.SecretAccessKey == "") {
+				log.Fatal(`Error: You must either provide both the access key ID and secret access key or
+	neither to configure interactively.
+
+	For more information, run:
+		r2 help configure`)
 			} else {
-				// If no configuration provided, get configuration interactively
-				writeConfig(getCredentials(""))
+				// Check if configuration provided
+				if c.AccountID != "" && c.AccessKeyID != "" && c.SecretAccessKey != "" {
+					writeConfig(c)
+				} else {
+					// If no configuration provided, get configuration interactively
+					writeConfig(getCredentials(""))
+				}
 			}
 		}
 	},
@@ -251,6 +296,7 @@ func init() {
 	rootCmd.AddCommand(configureCmd)
 
 	// Add flags to the configure subcommand
+	configureCmd.Flags().BoolP("list", "l", false, "List all named profiles")
 	configureCmd.Flags().String("profile", "", "Configure a named profile")
 	configureCmd.Flags().String("account-id", "", "R2 Account ID")
 	configureCmd.Flags().String("access-key-id", "", "R2 Access Key ID")
