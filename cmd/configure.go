@@ -164,17 +164,6 @@ func writeConfig(c config) {
 	}
 }
 
-// Handle configuration options
-func handleConfig(c ...config) {
-	// Check if configuration provided
-	if len(c) > 0 && c[0].AccountID != "" && c[0].AccessKeyID != "" && c[0].SecretAccessKey != "" {
-		writeConfig(c[0])
-	} else {
-		// If no configuration provided, get configuration interactively
-		writeConfig(getCredentials(""))
-	}
-}
-
 // configureCmd represents the configure command
 var configureCmd = &cobra.Command{
 	Use:   "configure",
@@ -246,8 +235,13 @@ neither to configure interactively.
 For more information, run:
   r2 help configure`)
 		} else {
-			// Interactively get credentials if no access key ID or secret access key provided
-			handleConfig(c)
+			// Check if configuration provided
+			if c.AccountID != "" && c.AccessKeyID != "" && c.SecretAccessKey != "" {
+				writeConfig(c)
+			} else {
+				// If no configuration provided, get configuration interactively
+				writeConfig(getCredentials(""))
+			}
 		}
 	},
 }
