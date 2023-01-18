@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/spf13/cobra"
 )
 
@@ -41,19 +42,31 @@ func listBuckets(client *s3.Client) {
 	}
 }
 
-// List all objects in a bucket
-func listObjects(client *s3.Client, bucketName string) {
-	// Get objects
+// Get all objects in a bucket
+func getObjects(client *s3.Client, bucketName string) []types.Object {
 	listObjectsOutput, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 		Bucket: &bucketName,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
+	return listObjectsOutput.Contents
+}
 
+// Get paths of all objects in a bucket
+func getObjectPaths(client *s3.Client, bucketName string) []string {
+	var objectPaths []string
+	for _, object := range getObjects(client, bucketName) {
+		objectPaths = append(objectPaths, *object.Key)
+	}
+	return objectPaths
+}
+
+// Print all objects in a bucket
+func listObjects(client *s3.Client, bucketName string) {
 	// Get creation date, file size, and name of each object
 	var objectData [][]string
-	for _, object := range listObjectsOutput.Contents {
+	for _, object := range getObjects(client, bucketName) {
 		// Get file size
 		fs := fileSize(object.Size)
 

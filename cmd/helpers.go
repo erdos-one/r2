@@ -11,6 +11,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+// Check if slice contains string
+func contains(slice []string, str string) bool {
+	for _, v := range slice {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
 // Get profile by name or create new one
 func getProfile(profileName string) config {
 	// Get profiles

@@ -22,7 +22,7 @@ Here's where we stand:
 - [x] ls
 - [ ] mb
 - [ ] mv
-- [ ] presign
+- [x] presign
 - [ ] rb
 - [ ] rm
 - [ ] sync
