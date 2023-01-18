@@ -26,6 +26,5 @@ Here's where we stand:
 - [x] rb
 - [ ] rm
 - [ ] sync
-- [ ] website
 
 If you'd like to contribute, to our project, we'd much appreciate your help!

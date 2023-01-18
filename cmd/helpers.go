@@ -1,14 +1,9 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"log"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
-	awsConfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"regexp"
+	"strings"
 )
 
 // Check if slice contains string
@@ -21,46 +16,36 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-// Get profile by name or create new one
-func getProfile(profileName string) config {
-	// Get profiles
-	profiles := getConfig(false)
-
-	// If profile exists, return it
-	for _, profile := range profiles {
-		if profile.Profile == profileName {
-			return profile
-		}
+// Convert file size to kb, mb, gb, etc.
+func fileSizeFmt(b int64) []string {
+	if b < 1024 {
+		// If size is less than 1 KB, return size in bytes
+		return []string{fmt.Sprintf("%d", b), "B"}
+	} else if b < 1048576 {
+		// If size is less than 1 MB, return size in KB
+		return []string{fmt.Sprintf("%d", b/1024), "KB"}
+	} else if b < 1073741824 {
+		// If size is less than 1 GB, return size in MB
+		return []string{fmt.Sprintf("%.2f", float64(b)/1048576), "MB"}
+	} else {
+		// If size is greater than or equal to 1 GB, return size in GB
+		return []string{fmt.Sprintf("%.2f", float64(b)/1073741824), "GB"}
 	}
-
-	// Profile doesn't exist, create new one and save to ~/.r2 config file
-	profile := getCredentials(profileName)
-	writeConfig(profile)
-
-	return profile
 }
 
-// Get S3 API Client for given profile
-func getClient(profileName string) *s3.Client {
-	// Get profile, if not provided or nonexistent, get configuration interactively
-	c := getProfile(profileName)
+// Hold R2 URI bucket and file path
+type r2URI struct {
+	bucket string
+	path   string
+}
 
-	// Get R2 account endpoint
-	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL: fmt.Sprintf("https://%s.r2.cloudflarestorage.com", c.AccountID),
-		}, nil
-	})
+// Parse R2 URI
+func parseR2URI(uri string) r2URI {
+	// If s3:// is used, replace with r2://
+	uri = strings.Replace(uri, "s3://", "r2://", 1)
 
-	// Set credentials
-	cfg, err := awsConfig.LoadDefaultConfig(context.TODO(),
-		awsConfig.WithEndpointResolverWithOptions(r2Resolver),
-		awsConfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(c.AccessKeyID, c.SecretAccessKey, "")),
-	)
-	if err != nil {
-		log.Fatal(err)
+	return r2URI{
+		bucket: regexp.MustCompile(`r2://([\w-]+)/.+`).FindStringSubmatch(uri)[1],
+		path:   regexp.MustCompile(`r2://[\w-]+/(.+)`).FindStringSubmatch(uri)[1],
 	}
-
-	// Return S3 client to interact with R2
-	return s3.NewFromConfig(cfg)
 }
