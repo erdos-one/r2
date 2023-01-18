@@ -20,7 +20,7 @@ Here's where we stand:
 - [x] configure
 - [ ] cp
 - [x] ls
-- [ ] mb
+- [x] mb
 - [ ] mv
 - [x] presign
 - [ ] rb
