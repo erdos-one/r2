@@ -17,8 +17,9 @@ This CLI fills that gap.
 We're working to implement all the functionality of the AWS CLI's s3 subcommand.
 Here's where we stand:
 
+- [x] configure
 - [ ] cp
-- [ ] ls
+- [x] ls
 - [ ] mb
 - [ ] mv
 - [ ] presign
