@@ -23,7 +23,7 @@ Here's where we stand:
 - [x] mb
 - [ ] mv
 - [x] presign
-- [ ] rb
+- [x] rb
 - [ ] rm
 - [ ] sync
 - [ ] website

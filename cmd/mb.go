@@ -18,7 +18,7 @@ func createBucket(client *s3.Client, bucketName string) {
 		CreateBucketConfiguration: &types.CreateBucketConfiguration{},
 	})
 	if err != nil {
-		log.Fatalf("Error creating bucket %s: %v", bucketName, err)
+		log.Fatalf("Error creating bucket %s: %v\n", bucketName, err)
 	}
 }
 
