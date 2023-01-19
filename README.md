@@ -24,7 +24,7 @@ Here's where we stand:
 - [x] mv
 - [x] presign
 - [x] rb
-- [ ] rm
+- [x] rm
 - [ ] sync
 
 If you'd like to contribute, to our project, we'd much appreciate your help!
