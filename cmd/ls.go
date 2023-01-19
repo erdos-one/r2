@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"log"
+	"regexp"
 
 	"github.com/spf13/cobra"
 )
@@ -21,6 +22,9 @@ var lsCmd = &cobra.Command{
 		if len(args) > 0 {
 			// If args passed to ls, list objects in each bucket passed
 			for _, bucketName := range args {
+				// Remove URI scheme if present
+				bucketName = regexp.MustCompile(`^r2://`).ReplaceAllString(bucketName, "")
+
 				b := c.bucket(bucketName)
 				b.printObjects()
 			}
