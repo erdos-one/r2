@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"log"
+
 	"github.com/spf13/cobra"
 )
 
@@ -9,7 +11,12 @@ var lsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List either all buckets or all objects in a bucket",
 	Run: func(cmd *cobra.Command, args []string) {
-		c := client("default")
+		// Get profile client
+		profile, err := cmd.Flags().GetString("profile")
+		if err != nil {
+			log.Fatal(err)
+		}
+		c := client(profile)
 
 		if len(args) > 0 {
 			// If args passed to ls, list objects in each bucket passed

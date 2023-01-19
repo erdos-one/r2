@@ -28,4 +28,6 @@ func Execute() {
 }
 
 func init() {
+	// Enable profile flag for all subcommands
+	rootCmd.PersistentFlags().StringP("profile", "p", "default", "R2 profile to use")
 }

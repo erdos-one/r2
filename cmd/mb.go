@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -12,8 +13,12 @@ var mbCmd = &cobra.Command{
 	Short: "Create an R2 bucket",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Get client
-		c := client("default")
+		// Get profile client
+		profile, err := cmd.Flags().GetString("profile")
+		if err != nil {
+			log.Fatal(err)
+		}
+		c := client(profile)
 
 		// If a bucket name is provided, create the bucket
 		if len(args) > 0 {

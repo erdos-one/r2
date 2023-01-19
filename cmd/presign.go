@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -12,8 +13,13 @@ var presignCmd = &cobra.Command{
 	Short: "Generate a pre-signed URL for a Cloudflare R2 object",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		c := client("default")
-		pc := presignClient("default")
+		// Get profile client
+		profile, err := cmd.Flags().GetString("profile")
+		if err != nil {
+			log.Fatal(err)
+		}
+		c := client(profile)
+		pc := presignClient(profile)
 
 		for _, arg := range args {
 			// Get R2 URI components from argument

@@ -13,8 +13,12 @@ var mvCmd = &cobra.Command{
 	Short: "Moves a local file or R2 object to another location locally or in R2.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Get client
-		c := client("default")
+		// Get profile client
+		profile, err := cmd.Flags().GetString("profile")
+		if err != nil {
+			log.Fatal(err)
+		}
+		c := client(profile)
 
 		// If a bucket name is provided, create the bucket
 		if len(args) == 2 {
