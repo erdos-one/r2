@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -163,6 +164,86 @@ func (b *r2Bucket) delete(bucketPath string) {
 	})
 	if err != nil {
 		log.Fatalf("Couldn't delete file r2://%s/%s: %v\n", b.name, bucketPath, err)
+	}
+}
+
+// Sync a local directory to an R2 bucket
+func (b *r2Bucket) syncLocalToR2(sourcePath string) {
+	// Check if source path exists and is a directory
+	if !isDir(sourcePath) {
+		log.Fatal("Source path must be a directory.")
+	}
+
+	// Get extant paths and their MD5 checksums in bucket
+	bucketObjects := make(map[string]string)
+	for _, object := range b.getObjects() {
+		bucketObjects[*object.Key] = strings.Trim(*object.ETag, `"`)
+	}
+
+	// Iterate through paths in source directory
+	err := filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// If path is a file, upload it
+		if !info.IsDir() {
+			bucketPath := strings.TrimPrefix(path, sourcePath+"/")
+			objectMD5, objectInBucket := bucketObjects[bucketPath]
+			if !objectInBucket || (md5sum(path) != objectMD5) {
+				b.upload(path, bucketPath)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Sync an R2 bucket to a local directory
+func (b *r2Bucket) syncR2ToLocal(destinationPath string) {
+	// Check if destination path exists and is a directory
+	if !isDir(destinationPath) {
+		log.Fatal("Destination path must be a directory.")
+	}
+
+	// Iterate through objects and download necessary ones
+	for _, object := range b.getObjects() {
+		path := *object.Key
+		hash := strings.Trim(*object.ETag, `"`)
+
+		// If file either doesn't exist locally or it's changed, download it
+		if !fileExists(path) || (fileExists(path) && (md5sum(path) != hash)) {
+			outPath := destinationPath + "/" + path
+			ensureDirExists(outPath)
+			b.download(path, outPath)
+		}
+	}
+}
+
+// Sync an R2 bucket to another R2 bucket
+func (b *r2Bucket) syncR2ToR2(destBucket r2Bucket) {
+	// Get extant paths and their MD5 checksums in source bucket
+	sourceBucketObjects := make(map[string]string)
+	for _, object := range b.getObjects() {
+		sourceBucketObjects[*object.Key] = strings.Trim(*object.ETag, `"`)
+	}
+
+	// Get extant paths and their MD5 checksums in destination bucket
+	destBucketObjects := make(map[string]string)
+	for _, object := range destBucket.getObjects() {
+		destBucketObjects[*object.Key] = strings.Trim(*object.ETag, `"`)
+	}
+
+	// Iterate through paths in source bucket and copy necessary ones
+	for sourcePath, sourceHash := range sourceBucketObjects {
+		destHash, sourceObjectInDestBucket := destBucketObjects[sourcePath]
+		if !sourceObjectInDestBucket || (sourceHash != destHash) {
+			b.copy(sourcePath, r2URI{bucket: destBucket.name, path: sourcePath})
+		}
 	}
 }
 

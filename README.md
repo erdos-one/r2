@@ -1,4 +1,4 @@
-# r2
+# R2 CLI
 
 r2 is a command line interface for working with Cloudflare's
 [R2 Storage](https://www.cloudflare.com/products/r2/).
@@ -25,6 +25,6 @@ Here's where we stand:
 - [x] presign
 - [x] rb
 - [x] rm
-- [ ] sync
+- [x] sync
 
 If you'd like to contribute, to our project, we'd much appreciate your help!

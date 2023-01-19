@@ -1,7 +1,13 @@
 package cmd
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -33,6 +39,34 @@ func fileSizeFmt(b int64) []string {
 	}
 }
 
+// Check if file exists
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+// Check if a file is a directory
+func isDir(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return fileInfo.IsDir()
+}
+
+// Ensure a directory exists
+func ensureDirExists(path string) {
+	dir := filepath.Dir(path)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.MkdirAll(dir, 0755)
+	}
+}
+
+// Remove R2 URI prefix
+func removeR2URIPrefix(uri string) string {
+	return strings.TrimPrefix(uri, "r2://")
+}
+
 // Hold R2 URI bucket and file path
 type r2URI struct {
 	bucket string
@@ -50,4 +84,23 @@ func parseR2URI(uri string) r2URI {
 		bucket: regexp.MustCompile(`r2://([\w-]+)/.+`).FindStringSubmatch(uri)[1],
 		path:   regexp.MustCompile(`r2://[\w-]+/(.+)`).FindStringSubmatch(uri)[1],
 	}
+}
+
+// Generate MD5 hash of file
+func md5sum(path string) string {
+	// Get file
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	// Get file hash
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		log.Fatal(err)
+	}
+
+	hashBytes := hash.Sum(nil)[:16]
+	return hex.EncodeToString(hashBytes)
 }
