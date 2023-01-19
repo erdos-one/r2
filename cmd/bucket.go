@@ -1,11 +1,13 @@
-// Bucket-level functions
+// Bucket-level operations
 
 package cmd
 
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -84,6 +86,83 @@ func (b *r2Bucket) printObjects() {
 			strings.Repeat(" ", longestFileSizeUnitString-len(object[2])),
 			object[3],
 		)
+	}
+}
+
+// Put an object in a bucket
+func (b *r2Bucket) put(file io.Reader, bucketPath string) error {
+	_, err := b.client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket: aws.String(b.name),
+		Key:    aws.String(bucketPath),
+		Body:   file,
+	})
+	return err
+}
+
+// Upload a local file to a bucket
+func (b *r2Bucket) upload(localPath, bucketPath string) {
+	file, err := os.Open(localPath)
+	if err != nil {
+		log.Fatalf("Couldn't open file %s to upload: %v\n", localPath, err)
+	}
+
+	defer file.Close()
+
+	err = b.put(file, bucketPath)
+	if err != nil {
+		log.Fatalf("Couldn't upload file %s to r2://%s/%s: %v\n", localPath, b.name, bucketPath, err)
+	}
+}
+
+// Get an object from a bucket
+func (b *r2Bucket) get(bucketPath string) io.ReadCloser {
+	obj, err := b.client.GetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(b.name),
+		Key:    aws.String(bucketPath),
+	})
+	if err != nil {
+		log.Fatalf("Couldn't get file r2://%s/%s: %v\n", b.name, bucketPath, err)
+	}
+
+	return obj.Body
+}
+
+// Download an object from a bucket
+func (b *r2Bucket) download(bucketPath, localPath string) {
+	objBody := b.get(bucketPath)
+
+	file, err := os.Create(localPath)
+	if err != nil {
+		log.Fatalf("Couldn't create file %s to download to: %v\n", localPath, err)
+	}
+
+	defer file.Close()
+	_, err = io.Copy(file, objBody)
+	if err != nil {
+		log.Fatalf("Couldn't download file r2://%s/%s to %s: %v\n", b.name, bucketPath, localPath, err)
+	}
+}
+
+// Copy object from one bucket to another
+func (b *r2Bucket) copy(bucketPath string, copyToURI r2URI) {
+	_, err := b.client.CopyObject(context.TODO(), &s3.CopyObjectInput{
+		Bucket:     aws.String(copyToURI.bucket),
+		CopySource: aws.String(b.name + "/" + bucketPath),
+		Key:        aws.String(copyToURI.path),
+	})
+	if err != nil {
+		log.Fatalf("Couldn't copy file r2://%s/%s to r2://%s/%s: %v\n", b.name, bucketPath, copyToURI.bucket, copyToURI.path, err)
+	}
+}
+
+// Delete an object from a bucket
+func (b *r2Bucket) delete(bucketPath string) {
+	_, err := b.client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: aws.String(b.name),
+		Key:    aws.String(bucketPath),
+	})
+	if err != nil {
+		log.Fatalf("Couldn't delete file r2://%s/%s: %v\n", b.name, bucketPath, err)
 	}
 }
 

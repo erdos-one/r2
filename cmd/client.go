@@ -1,4 +1,4 @@
-// Client-level functions
+// Client-level operations
 
 package cmd
 

@@ -21,7 +21,7 @@ Here's where we stand:
 - [ ] cp
 - [x] ls
 - [x] mb
-- [ ] mv
+- [x] mv
 - [x] presign
 - [x] rb
 - [ ] rm

@@ -39,11 +39,13 @@ type r2URI struct {
 	path   string
 }
 
+// Determine whether string is an R2 URI
+func isR2URI(uri string) bool {
+	return strings.HasPrefix(uri, "r2://")
+}
+
 // Parse R2 URI
 func parseR2URI(uri string) r2URI {
-	// If s3:// is used, replace with r2://
-	uri = strings.Replace(uri, "s3://", "r2://", 1)
-
 	return r2URI{
 		bucket: regexp.MustCompile(`r2://([\w-]+)/.+`).FindStringSubmatch(uri)[1],
 		path:   regexp.MustCompile(`r2://[\w-]+/(.+)`).FindStringSubmatch(uri)[1],
