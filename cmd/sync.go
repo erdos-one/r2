@@ -3,6 +3,8 @@ package cmd
 import (
 	"log"
 
+	"github.com/erdos-one/r2/pkg"
+
 	"github.com/spf13/cobra"
 )
 
@@ -13,29 +15,29 @@ var syncCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get profile client
-		profile, err := cmd.Flags().GetString("profile")
+		profileName, err := cmd.Flags().GetString("profile")
 		if err != nil {
 			log.Fatal(err)
 		}
-		c := client(profile)
+		c := pkg.Client(getProfile(profileName))
 
 		// If a bucket name is provided, create the bucket
 		if len(args) == 2 {
 			sourcePath := args[0]
 			destinationPath := args[1]
-			if !isR2URI(sourcePath) && isR2URI(destinationPath) {
+			if !pkg.IsR2URI(sourcePath) && pkg.IsR2URI(destinationPath) {
 				// Sync local directory to R2 bucket
-				b := c.bucket(removeR2URIPrefix(destinationPath))
-				b.syncLocalToR2(sourcePath)
-			} else if isR2URI(sourcePath) && !isR2URI(destinationPath) {
+				b := c.Bucket(pkg.RemoveR2URIPrefix(destinationPath))
+				b.SyncLocalToR2(sourcePath)
+			} else if pkg.IsR2URI(sourcePath) && !pkg.IsR2URI(destinationPath) {
 				// Sync R2 bucket to local directory
-				b := c.bucket(removeR2URIPrefix(sourcePath))
-				b.syncR2ToLocal(destinationPath)
-			} else if isR2URI(sourcePath) && isR2URI(destinationPath) {
+				b := c.Bucket(pkg.RemoveR2URIPrefix(sourcePath))
+				b.SyncR2ToLocal(destinationPath)
+			} else if pkg.IsR2URI(sourcePath) && pkg.IsR2URI(destinationPath) {
 				// Sync R2 bucket to R2 bucket
-				b := c.bucket(removeR2URIPrefix(sourcePath))
-				destBucket := c.bucket(removeR2URIPrefix(destinationPath))
-				b.syncR2ToR2(destBucket)
+				b := c.Bucket(pkg.RemoveR2URIPrefix(sourcePath))
+				destBucket := c.Bucket(pkg.RemoveR2URIPrefix(destinationPath))
+				b.SyncR2ToR2(destBucket)
 			}
 		} else {
 			log.Fatal("Please provide both a source and destination path.")

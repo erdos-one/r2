@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/erdos-one/r2/pkg"
+
 	"github.com/spf13/cobra"
 )
 
@@ -14,35 +16,35 @@ var mvCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get profile client
-		profile, err := cmd.Flags().GetString("profile")
+		profileName, err := cmd.Flags().GetString("profile")
 		if err != nil {
 			log.Fatal(err)
 		}
-		c := client(profile)
+		c := pkg.Client(getProfile(profileName))
 
 		// If a bucket name is provided, create the bucket
 		if len(args) == 2 {
 			sourcePath := args[0]
 			destinationPath := args[1]
-			if !isR2URI(sourcePath) && isR2URI(destinationPath) {
+			if !pkg.IsR2URI(sourcePath) && pkg.IsR2URI(destinationPath) {
 				// Move local file to R2
-				destURI := parseR2URI(destinationPath)
-				b := c.bucket(destURI.bucket)
-				b.upload(sourcePath, destURI.path)
+				destURI := pkg.ParseR2URI(destinationPath)
+				b := c.Bucket(destURI.Bucket)
+				b.Upload(sourcePath, destURI.Path)
 				os.Remove(sourcePath)
-			} else if isR2URI(sourcePath) && !isR2URI(destinationPath) {
+			} else if pkg.IsR2URI(sourcePath) && !pkg.IsR2URI(destinationPath) {
 				// Move R2 object to local file
-				sourceURI := parseR2URI(sourcePath)
-				b := c.bucket(sourceURI.bucket)
-				b.download(sourceURI.path, destinationPath)
-				b.delete(sourceURI.path)
-			} else if isR2URI(sourcePath) && isR2URI(destinationPath) {
+				sourceURI := pkg.ParseR2URI(sourcePath)
+				b := c.Bucket(sourceURI.Bucket)
+				b.Download(sourceURI.Path, destinationPath)
+				b.Delete(sourceURI.Path)
+			} else if pkg.IsR2URI(sourcePath) && pkg.IsR2URI(destinationPath) {
 				// Move R2 object to R2 object
-				sourceURI := parseR2URI(sourcePath)
-				destURI := parseR2URI(destinationPath)
-				b := c.bucket(sourceURI.bucket)
-				b.copy(sourceURI.path, destURI)
-				b.delete(sourceURI.path)
+				sourceURI := pkg.ParseR2URI(sourcePath)
+				destURI := pkg.ParseR2URI(destinationPath)
+				b := c.Bucket(sourceURI.Bucket)
+				b.Copy(sourceURI.Path, destURI)
+				b.Delete(sourceURI.Path)
 			}
 		} else {
 			log.Fatal("Please provide both a source and destination path.")

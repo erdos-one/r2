@@ -9,14 +9,15 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/erdos-one/r2/pkg"
+
 	"github.com/spf13/cobra"
 )
 
-type config struct {
-	Profile         string
-	AccountID       string
-	AccessKeyID     string
-	SecretAccessKey string
+// Format configuration string
+func configString(c pkg.Config) string {
+	configTemplate := "[%s]\naccount_id=%s\naccess_key_id=%s\nsecret_access_key=%s"
+	return fmt.Sprintf(configTemplate, c.Profile, c.AccountID, c.AccessKeyID, c.SecretAccessKey)
 }
 
 // ~/.r2 configuration file path
@@ -30,15 +31,28 @@ func getConfigPath() string {
 
 var R2ConfigFile = getConfigPath()
 
-// Format configuration string
-func configString(c config) string {
-	configTemplate := "[%s]\naccount_id=%s\naccess_key_id=%s\nsecret_access_key=%s"
-	return fmt.Sprintf(configTemplate, c.Profile, c.AccountID, c.AccessKeyID, c.SecretAccessKey)
+// Get profile by name or create new one
+func getProfile(profileName string) pkg.Config {
+	// Get profiles
+	profiles := getConfig(false)
+
+	// If profile exists, return it
+	for _, profile := range profiles {
+		if profile.Profile == profileName {
+			return profile
+		}
+	}
+
+	// Profile doesn't exist, create new one and save to ~/.r2 config file
+	profile := getCredentials(profileName)
+	writeConfig(profile)
+
+	return profile
 }
 
 // Get configuration credentials interactively
-func getCredentials(profile string) config {
-	var c config
+func getCredentials(profile string) pkg.Config {
+	var c pkg.Config
 
 	// Get profile
 	if profile == "" {
@@ -67,12 +81,12 @@ func getCredentials(profile string) config {
 }
 
 // Parse configuration file and return profiles
-func getConfig(createIfNotPresent bool) map[string]config {
+func getConfig(createIfNotPresent bool) map[string]pkg.Config {
 	// Create configuration file if it doesn't exist
 	if _, err := os.Stat(R2ConfigFile); os.IsNotExist(err) {
 		// If not creating configuration file, return empty map
 		if !createIfNotPresent {
-			return make(map[string]config)
+			return make(map[string]pkg.Config)
 		}
 
 		f, err := os.Create(R2ConfigFile)
@@ -95,12 +109,12 @@ func getConfig(createIfNotPresent bool) map[string]config {
 	configString := regexp.MustCompile(`^\n$`).ReplaceAllString(string(c), "")
 
 	// Parse configuration file into profiles
-	var profiles = make(map[string]config)
+	var profiles = make(map[string]pkg.Config)
 
 	profilesRe := regexp.MustCompile(`\[[\w\s\]=]+`)
 	for _, p := range profilesRe.FindAllString(configString, -1) {
 		// Parse profiles
-		var profile config
+		var profile pkg.Config
 
 		// Get profile name
 		if regexp.MustCompile(`\[\w+\]`).MatchString(p) {
@@ -156,7 +170,7 @@ func listProfiles() []string {
 }
 
 // Write configuration to file
-func writeConfig(c config) {
+func writeConfig(c pkg.Config) {
 	// Read configuration file
 	profiles := getConfig(false)
 
@@ -244,7 +258,7 @@ Be careful not to share your API Token credentials with anyone.`,
 			fmt.Println(strings.Join(listProfiles(), "\n"))
 		} else {
 			// Parse configuration
-			var c config
+			var c pkg.Config
 			var err error
 
 			// Get profile name

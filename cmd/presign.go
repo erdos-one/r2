@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/erdos-one/r2/pkg"
+
 	"github.com/spf13/cobra"
 )
 
@@ -14,24 +16,24 @@ var presignCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get profile client
-		profile, err := cmd.Flags().GetString("profile")
+		profileName, err := cmd.Flags().GetString("profile")
 		if err != nil {
 			log.Fatal(err)
 		}
-		c := client(profile)
-		pc := presignClient(profile)
+		c := pkg.Client(getProfile(profileName))
+		pc := pkg.PresignClient(getProfile(profileName))
 
 		for _, arg := range args {
 			// Get R2 URI components from argument
-			uri := parseR2URI(arg)
+			uri := pkg.ParseR2URI(arg)
 
 			// If object exists in bucket, print presigned URL to get object from bucket, otherwise print
 			// presigned URL to put object in bucket
-			b := c.bucket(uri.bucket)
-			if contains(b.getObjectPaths(), uri.path) {
-				fmt.Println(pc.getURL(uri))
+			b := c.Bucket(uri.Bucket)
+			if pkg.Contains(b.GetObjectPaths(), uri.Path) {
+				fmt.Println(pc.GetURL(uri))
 			} else {
-				fmt.Println(pc.putURL(uri))
+				fmt.Println(pc.PutURL(uri))
 			}
 		}
 	},

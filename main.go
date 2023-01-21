@@ -1,6 +1,6 @@
 package main
 
-import "r2/cmd"
+import "github.com/erdos-one/r2/cmd"
 
 func main() {
 	cmd.Execute()

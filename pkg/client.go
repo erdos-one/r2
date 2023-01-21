@@ -1,6 +1,6 @@
 // Client-level operations
 
-package cmd
+package pkg
 
 import (
 	"context"
@@ -14,35 +14,20 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
+type Config struct {
+	Profile         string
+	AccountID       string
+	AccessKeyID     string
+	SecretAccessKey string
+}
+
 // Make new R2 client struct so we can add methods to it
-type r2Client struct {
+type R2Client struct {
 	s3.Client
 }
 
-// Get profile by name or create new one
-func getProfile(profileName string) config {
-	// Get profiles
-	profiles := getConfig(false)
-
-	// If profile exists, return it
-	for _, profile := range profiles {
-		if profile.Profile == profileName {
-			return profile
-		}
-	}
-
-	// Profile doesn't exist, create new one and save to ~/.r2 config file
-	profile := getCredentials(profileName)
-	writeConfig(profile)
-
-	return profile
-}
-
 // Get S3 API Client for given profile
-func s3Client(profileName string) *s3.Client {
-	// Get profile, if not provided or nonexistent, get configuration interactively
-	c := getProfile(profileName)
-
+func s3Client(c Config) *s3.Client {
 	// Get R2 account endpoint
 	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
@@ -63,24 +48,24 @@ func s3Client(profileName string) *s3.Client {
 }
 
 // R2 Client for given profile
-func client(profileName string) r2Client {
+func Client(c Config) R2Client {
 	// Get S3 client to interact with R2
-	return r2Client{*s3Client(profileName)}
+	return R2Client{*s3Client(c)}
 }
 
 // Make new R2 presign client struct so we can add methods to it
-type r2PresignClient struct {
+type R2PresignClient struct {
 	s3.PresignClient
 }
 
 // Get S3 API Client for given profile
-func presignClient(profileName string) r2PresignClient {
-	s3c := s3Client(profileName)
-	return r2PresignClient{*s3.NewPresignClient(s3c)}
+func PresignClient(c Config) R2PresignClient {
+	s3c := s3Client(c)
+	return R2PresignClient{*s3.NewPresignClient(s3c)}
 }
 
 // List all buckets in an account
-func (c *r2Client) listBuckets() {
+func (c *R2Client) PrintBuckets() {
 	// Get buckets
 	listBucketsOutput, err := c.ListBuckets(context.TODO(), &s3.ListBucketsInput{})
 	if err != nil {
@@ -93,19 +78,19 @@ func (c *r2Client) listBuckets() {
 	}
 }
 
-// Create a R2 bucket
-func (c *r2Client) createBucket(bucket string) {
+// Make a R2 bucket
+func (c *R2Client) MakeBucket(name string) {
 	_, err := c.CreateBucket(context.TODO(), &s3.CreateBucketInput{
-		Bucket:                    aws.String(bucket),
+		Bucket:                    aws.String(name),
 		CreateBucketConfiguration: &types.CreateBucketConfiguration{},
 	})
 	if err != nil {
-		log.Fatalf("Error creating bucket %s: %v\n", bucket, err)
+		log.Fatalf("Error creating bucket %s: %v\n", name, err)
 	}
 }
 
 // Remove a R2 bucket
-func (c *r2Client) removeBucket(bucket string) {
+func (c *R2Client) RemoveBucket(bucket string) {
 	_, err := c.DeleteBucket(context.TODO(), &s3.DeleteBucketInput{
 		Bucket: aws.String(bucket)})
 	if err != nil {

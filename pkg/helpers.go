@@ -1,4 +1,4 @@
-package cmd
+package pkg
 
 import (
 	"crypto/md5"
@@ -13,7 +13,7 @@ import (
 )
 
 // Check if slice contains string
-func contains(slice []string, str string) bool {
+func Contains(slice []string, str string) bool {
 	for _, v := range slice {
 		if v == str {
 			return true
@@ -63,26 +63,26 @@ func ensureDirExists(path string) {
 }
 
 // Remove R2 URI prefix
-func removeR2URIPrefix(uri string) string {
+func RemoveR2URIPrefix(uri string) string {
 	return strings.TrimPrefix(uri, "r2://")
 }
 
 // Hold R2 URI bucket and file path
-type r2URI struct {
-	bucket string
-	path   string
+type R2URI struct {
+	Bucket string
+	Path   string
 }
 
 // Determine whether string is an R2 URI
-func isR2URI(uri string) bool {
+func IsR2URI(uri string) bool {
 	return strings.HasPrefix(uri, "r2://")
 }
 
 // Parse R2 URI
-func parseR2URI(uri string) r2URI {
-	return r2URI{
-		bucket: regexp.MustCompile(`r2://([\w-]+)/.+`).FindStringSubmatch(uri)[1],
-		path:   regexp.MustCompile(`r2://[\w-]+/(.+)`).FindStringSubmatch(uri)[1],
+func ParseR2URI(uri string) R2URI {
+	return R2URI{
+		Bucket: regexp.MustCompile(`r2://([\w-]+)/.+`).FindStringSubmatch(uri)[1],
+		Path:   regexp.MustCompile(`r2://[\w-]+/(.+)`).FindStringSubmatch(uri)[1],
 	}
 }
 

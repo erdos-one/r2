@@ -3,6 +3,8 @@ package cmd
 import (
 	"log"
 
+	"github.com/erdos-one/r2/pkg"
+
 	"github.com/spf13/cobra"
 )
 
@@ -12,24 +14,24 @@ var lsCmd = &cobra.Command{
 	Short: "List either all buckets or all objects in a bucket",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get profile client
-		profile, err := cmd.Flags().GetString("profile")
+		profileName, err := cmd.Flags().GetString("profile")
 		if err != nil {
 			log.Fatal(err)
 		}
-		c := client(profile)
+		c := pkg.Client(getProfile(profileName))
 
 		if len(args) > 0 {
 			// If args passed to ls, list objects in each bucket passed
 			for _, bucketName := range args {
 				// Remove URI scheme if present
-				bucketName = removeR2URIPrefix(bucketName)
+				bucketName = pkg.RemoveR2URIPrefix(bucketName)
 
-				b := c.bucket(bucketName)
-				b.printObjects()
+				b := c.Bucket(bucketName)
+				b.PrintObjects()
 			}
 		} else {
 			// If no args passed to ls, list all buckets
-			c.listBuckets()
+			c.PrintBuckets()
 		}
 	},
 }

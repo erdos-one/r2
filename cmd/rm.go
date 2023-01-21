@@ -3,6 +3,8 @@ package cmd
 import (
 	"log"
 
+	"github.com/erdos-one/r2/pkg"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,14 +19,14 @@ var rmCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		c := client(profile)
+		c := pkg.Client(getProfile(profile))
 
 		// If a bucket name is provided, create the bucket
 		for _, arg := range args {
-			if isR2URI(arg) {
-				uri := parseR2URI(arg)
-				b := c.bucket(uri.bucket)
-				b.delete(uri.path)
+			if pkg.IsR2URI(arg) {
+				uri := pkg.ParseR2URI(arg)
+				b := c.Bucket(uri.Bucket)
+				b.Delete(uri.Path)
 			} else {
 				log.Fatalf("Path %s is not a valid R2 URI", arg)
 			}

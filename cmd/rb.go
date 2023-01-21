@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/erdos-one/r2/pkg"
+
 	"github.com/spf13/cobra"
 )
 
@@ -14,15 +16,15 @@ var rbCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get profile client
-		profile, err := cmd.Flags().GetString("profile")
+		profileName, err := cmd.Flags().GetString("profile")
 		if err != nil {
 			log.Fatal(err)
 		}
-		c := client(profile)
+		c := pkg.Client(getProfile(profileName))
 
 		// If a bucket name is provided, create the bucket
 		if len(args) > 0 {
-			c.removeBucket(args[0])
+			c.RemoveBucket(args[0])
 		} else {
 			fmt.Println("Please provide a bucket name")
 		}

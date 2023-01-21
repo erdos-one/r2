@@ -1,6 +1,6 @@
 // Bucket-level operations
 
-package cmd
+package pkg
 
 import (
 	"context"
@@ -16,22 +16,22 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
-type r2Bucket struct {
-	client *r2Client
-	name   string
+type R2Bucket struct {
+	Client *R2Client
+	Name   string
 }
 
-func (c *r2Client) bucket(bucketName string) r2Bucket {
-	return r2Bucket{
-		client: c,
-		name:   bucketName,
+func (c *R2Client) Bucket(bucketName string) R2Bucket {
+	return R2Bucket{
+		Client: c,
+		Name:   bucketName,
 	}
 }
 
 // Get all objects in a bucket
-func (b *r2Bucket) getObjects() []types.Object {
-	listObjectsOutput, err := b.client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-		Bucket: &b.name,
+func (b *R2Bucket) GetObjects() []types.Object {
+	listObjectsOutput, err := b.Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		Bucket: &b.Name,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -40,19 +40,19 @@ func (b *r2Bucket) getObjects() []types.Object {
 }
 
 // Get paths of all objects in a bucket
-func (b *r2Bucket) getObjectPaths() []string {
+func (b *R2Bucket) GetObjectPaths() []string {
 	var objectPaths []string
-	for _, object := range b.getObjects() {
+	for _, object := range b.GetObjects() {
 		objectPaths = append(objectPaths, *object.Key)
 	}
 	return objectPaths
 }
 
 // Print all objects in a bucket
-func (b *r2Bucket) printObjects() {
+func (b *R2Bucket) PrintObjects() {
 	// Get creation date, file size, and name of each object
 	var objectData [][]string
-	for _, object := range b.getObjects() {
+	for _, object := range b.GetObjects() {
 		// Get file size
 		fs := fileSizeFmt(object.Size)
 
@@ -91,9 +91,9 @@ func (b *r2Bucket) printObjects() {
 }
 
 // Put an object in a bucket
-func (b *r2Bucket) put(file io.Reader, bucketPath string) error {
-	_, err := b.client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(b.name),
+func (b *R2Bucket) Put(file io.Reader, bucketPath string) error {
+	_, err := b.Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket: aws.String(b.Name),
 		Key:    aws.String(bucketPath),
 		Body:   file,
 	})
@@ -101,7 +101,7 @@ func (b *r2Bucket) put(file io.Reader, bucketPath string) error {
 }
 
 // Upload a local file to a bucket
-func (b *r2Bucket) upload(localPath, bucketPath string) {
+func (b *R2Bucket) Upload(localPath, bucketPath string) {
 	file, err := os.Open(localPath)
 	if err != nil {
 		log.Fatalf("Couldn't open file %s to upload: %v\n", localPath, err)
@@ -109,28 +109,28 @@ func (b *r2Bucket) upload(localPath, bucketPath string) {
 
 	defer file.Close()
 
-	err = b.put(file, bucketPath)
+	err = b.Put(file, bucketPath)
 	if err != nil {
-		log.Fatalf("Couldn't upload file %s to r2://%s/%s: %v\n", localPath, b.name, bucketPath, err)
+		log.Fatalf("Couldn't upload file %s to r2://%s/%s: %v\n", localPath, b.Name, bucketPath, err)
 	}
 }
 
 // Get an object from a bucket
-func (b *r2Bucket) get(bucketPath string) io.ReadCloser {
-	obj, err := b.client.GetObject(context.TODO(), &s3.GetObjectInput{
-		Bucket: aws.String(b.name),
+func (b *R2Bucket) Get(bucketPath string) io.ReadCloser {
+	obj, err := b.Client.GetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(b.Name),
 		Key:    aws.String(bucketPath),
 	})
 	if err != nil {
-		log.Fatalf("Couldn't get file r2://%s/%s: %v\n", b.name, bucketPath, err)
+		log.Fatalf("Couldn't get file r2://%s/%s: %v\n", b.Name, bucketPath, err)
 	}
 
 	return obj.Body
 }
 
 // Download an object from a bucket
-func (b *r2Bucket) download(bucketPath, localPath string) {
-	objBody := b.get(bucketPath)
+func (b *R2Bucket) Download(bucketPath, localPath string) {
+	objBody := b.Get(bucketPath)
 
 	file, err := os.Create(localPath)
 	if err != nil {
@@ -140,35 +140,35 @@ func (b *r2Bucket) download(bucketPath, localPath string) {
 	defer file.Close()
 	_, err = io.Copy(file, objBody)
 	if err != nil {
-		log.Fatalf("Couldn't download file r2://%s/%s to %s: %v\n", b.name, bucketPath, localPath, err)
+		log.Fatalf("Couldn't download file r2://%s/%s to %s: %v\n", b.Name, bucketPath, localPath, err)
 	}
 }
 
 // Copy object from one bucket to another
-func (b *r2Bucket) copy(bucketPath string, copyToURI r2URI) {
-	_, err := b.client.CopyObject(context.TODO(), &s3.CopyObjectInput{
-		Bucket:     aws.String(copyToURI.bucket),
-		CopySource: aws.String(b.name + "/" + bucketPath),
-		Key:        aws.String(copyToURI.path),
+func (b *R2Bucket) Copy(bucketPath string, copyToURI R2URI) {
+	_, err := b.Client.CopyObject(context.TODO(), &s3.CopyObjectInput{
+		Bucket:     aws.String(copyToURI.Bucket),
+		CopySource: aws.String(b.Name + "/" + bucketPath),
+		Key:        aws.String(copyToURI.Path),
 	})
 	if err != nil {
-		log.Fatalf("Couldn't copy file r2://%s/%s to r2://%s/%s: %v\n", b.name, bucketPath, copyToURI.bucket, copyToURI.path, err)
+		log.Fatalf("Couldn't copy file r2://%s/%s to r2://%s/%s: %v\n", b.Name, bucketPath, copyToURI.Bucket, copyToURI.Path, err)
 	}
 }
 
 // Delete an object from a bucket
-func (b *r2Bucket) delete(bucketPath string) {
-	_, err := b.client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
-		Bucket: aws.String(b.name),
+func (b *R2Bucket) Delete(bucketPath string) {
+	_, err := b.Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+		Bucket: aws.String(b.Name),
 		Key:    aws.String(bucketPath),
 	})
 	if err != nil {
-		log.Fatalf("Couldn't delete file r2://%s/%s: %v\n", b.name, bucketPath, err)
+		log.Fatalf("Couldn't delete file r2://%s/%s: %v\n", b.Name, bucketPath, err)
 	}
 }
 
 // Sync a local directory to an R2 bucket
-func (b *r2Bucket) syncLocalToR2(sourcePath string) {
+func (b *R2Bucket) SyncLocalToR2(sourcePath string) {
 	// Check if source path exists and is a directory
 	if !isDir(sourcePath) {
 		log.Fatal("Source path must be a directory.")
@@ -176,7 +176,7 @@ func (b *r2Bucket) syncLocalToR2(sourcePath string) {
 
 	// Get extant paths and their MD5 checksums in bucket
 	bucketObjects := make(map[string]string)
-	for _, object := range b.getObjects() {
+	for _, object := range b.GetObjects() {
 		bucketObjects[*object.Key] = strings.Trim(*object.ETag, `"`)
 	}
 
@@ -191,7 +191,7 @@ func (b *r2Bucket) syncLocalToR2(sourcePath string) {
 			bucketPath := strings.TrimPrefix(path, sourcePath+"/")
 			objectMD5, objectInBucket := bucketObjects[bucketPath]
 			if !objectInBucket || (md5sum(path) != objectMD5) {
-				b.upload(path, bucketPath)
+				b.Upload(path, bucketPath)
 			}
 		}
 
@@ -204,14 +204,14 @@ func (b *r2Bucket) syncLocalToR2(sourcePath string) {
 }
 
 // Sync an R2 bucket to a local directory
-func (b *r2Bucket) syncR2ToLocal(destinationPath string) {
+func (b *R2Bucket) SyncR2ToLocal(destinationPath string) {
 	// Check if destination path exists and is a directory
 	if !isDir(destinationPath) {
 		log.Fatal("Destination path must be a directory.")
 	}
 
 	// Iterate through objects and download necessary ones
-	for _, object := range b.getObjects() {
+	for _, object := range b.GetObjects() {
 		path := *object.Key
 		hash := strings.Trim(*object.ETag, `"`)
 
@@ -219,22 +219,22 @@ func (b *r2Bucket) syncR2ToLocal(destinationPath string) {
 		if !fileExists(path) || (fileExists(path) && (md5sum(path) != hash)) {
 			outPath := destinationPath + "/" + path
 			ensureDirExists(outPath)
-			b.download(path, outPath)
+			b.Download(path, outPath)
 		}
 	}
 }
 
 // Sync an R2 bucket to another R2 bucket
-func (b *r2Bucket) syncR2ToR2(destBucket r2Bucket) {
+func (b *R2Bucket) SyncR2ToR2(destBucket R2Bucket) {
 	// Get extant paths and their MD5 checksums in source bucket
 	sourceBucketObjects := make(map[string]string)
-	for _, object := range b.getObjects() {
+	for _, object := range b.GetObjects() {
 		sourceBucketObjects[*object.Key] = strings.Trim(*object.ETag, `"`)
 	}
 
 	// Get extant paths and their MD5 checksums in destination bucket
 	destBucketObjects := make(map[string]string)
-	for _, object := range destBucket.getObjects() {
+	for _, object := range destBucket.GetObjects() {
 		destBucketObjects[*object.Key] = strings.Trim(*object.ETag, `"`)
 	}
 
@@ -242,16 +242,16 @@ func (b *r2Bucket) syncR2ToR2(destBucket r2Bucket) {
 	for sourcePath, sourceHash := range sourceBucketObjects {
 		destHash, sourceObjectInDestBucket := destBucketObjects[sourcePath]
 		if !sourceObjectInDestBucket || (sourceHash != destHash) {
-			b.copy(sourcePath, r2URI{bucket: destBucket.name, path: sourcePath})
+			b.Copy(sourcePath, R2URI{Bucket: destBucket.Name, Path: sourcePath})
 		}
 	}
 }
 
 // Get presigned URL for object to get from bucket
-func (pc *r2PresignClient) getURL(uri r2URI) string {
+func (pc *R2PresignClient) GetURL(uri R2URI) string {
 	presignResult, err := pc.PresignGetObject(context.TODO(), &s3.GetObjectInput{
-		Bucket: aws.String(uri.bucket),
-		Key:    aws.String(uri.path),
+		Bucket: aws.String(uri.Bucket),
+		Key:    aws.String(uri.Path),
 	})
 	if err != nil {
 		log.Fatal("Couldn't get presigned URL for GetObject")
@@ -260,10 +260,10 @@ func (pc *r2PresignClient) getURL(uri r2URI) string {
 }
 
 // Get presigned URL for object to put in bucket
-func (pc *r2PresignClient) putURL(uri r2URI) string {
+func (pc *R2PresignClient) PutURL(uri R2URI) string {
 	presignResult, err := pc.PresignPutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(uri.bucket),
-		Key:    aws.String(uri.path),
+		Bucket: aws.String(uri.Bucket),
+		Key:    aws.String(uri.Path),
 	})
 	if err != nil {
 		log.Fatal("Couldn't get presigned URL for PutObject")
