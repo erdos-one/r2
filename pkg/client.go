@@ -14,6 +14,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
+// Config holds the configuration for the R2 client. This is used to authenticate and connect to the
+// R2 API. The profile is the name of the profile in the ~/.r2 configuration file. The account ID is
+// the ID of the R2 account. The access key ID and secret access key are the credentials for the
+// account.
 type Config struct {
 	Profile         string
 	AccountID       string
@@ -21,12 +25,16 @@ type Config struct {
 	SecretAccessKey string
 }
 
-// Make new R2 client struct so we can add methods to it
+// R2Client is a wrapper around the S3 client that provides methods for interacting with R2. This
+// allows us to add methods to the client. The S3 client is embedded in the R2Client struct so that
+// we can use the existing methods of the S3 client without having to re-implement them.
 type R2Client struct {
 	s3.Client
 }
 
-// Get S3 API Client for given profile
+// s3Client returns a new S3 client for the given profile. The client is configured with the R2
+// endpoint and credentials for the given profile. This is used to create the R2Client and
+// R2PresignClient structs, which are used for all R2 operations.
 func s3Client(c Config) *s3.Client {
 	// Get R2 account endpoint
 	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
@@ -47,24 +55,29 @@ func s3Client(c Config) *s3.Client {
 	return s3.NewFromConfig(cfg)
 }
 
-// R2 Client for given profile
+// Client returns a new R2 client struct so we can add methods to it. The client is configured with
+// the R2 endpoint and credentials for the given profile.
 func Client(c Config) R2Client {
-	// Get S3 client to interact with R2
 	return R2Client{*s3Client(c)}
 }
 
-// Make new R2 presign client struct so we can add methods to it
+// R2PresignClient is a wrapper around the S3 presign client that provides methods for interacting
+// with R2. This allows us to add methods to the client. The S3 presign client is embedded in the
+// R2PresignClient struct so that we can use the existing methods of the S3 presign client without
+// having to re-implement them.
 type R2PresignClient struct {
 	s3.PresignClient
 }
 
-// Get S3 API Client for given profile
+// PresignClient returns a new R2 presign client struct so we can add methods to it. The client is
+// configured with the R2 endpoint and credentials for the given profile. The presign client is
+// used for generating presigned URLs.
 func PresignClient(c Config) R2PresignClient {
 	s3c := s3Client(c)
 	return R2PresignClient{*s3.NewPresignClient(s3c)}
 }
 
-// List all buckets in an account
+// PrintBuckets prints the creation date and name of each bucket in the R2 account.
 func (c *R2Client) PrintBuckets() {
 	// Get buckets
 	listBucketsOutput, err := c.ListBuckets(context.TODO(), &s3.ListBucketsInput{})
@@ -78,7 +91,9 @@ func (c *R2Client) PrintBuckets() {
 	}
 }
 
-// Make a R2 bucket
+// MakeBucket creates a new R2 bucket with the given name. The bucket is created in the account
+// associated with the R2 client. The bucket name must be unique across all existing bucket names in
+// the account.
 func (c *R2Client) MakeBucket(name string) {
 	_, err := c.CreateBucket(context.TODO(), &s3.CreateBucketInput{
 		Bucket:                    aws.String(name),
@@ -89,7 +104,8 @@ func (c *R2Client) MakeBucket(name string) {
 	}
 }
 
-// Remove a R2 bucket
+// RemoveBucket removes the bucket with the given name from the R2 account. The bucket must be empty
+// before it can be removed.
 func (c *R2Client) RemoveBucket(bucket string) {
 	_, err := c.DeleteBucket(context.TODO(), &s3.DeleteBucketInput{
 		Bucket: aws.String(bucket)})

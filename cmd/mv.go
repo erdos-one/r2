@@ -53,6 +53,6 @@ var mvCmd = &cobra.Command{
 }
 
 func init() {
-	// Add the mv subcommand to the root command
+	// Add the mv command to the root command
 	rootCmd.AddCommand(mvCmd)
 }

@@ -32,6 +32,6 @@ var rbCmd = &cobra.Command{
 }
 
 func init() {
-	// Add the rb subcommand to the root command
+	// Add the rb command to the root command
 	rootCmd.AddCommand(rbCmd)
 }

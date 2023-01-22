@@ -16,11 +16,22 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
+// R2Bucket represents a Cloudflare R2 bucket, storing the bucket's name and R2 client used to
+// access the bucket.
 type R2Bucket struct {
 	Client *R2Client
 	Name   string
 }
 
+// Bucket receives an R2 client and takes a bucket name as an argument, returning a configured
+// R2Bucket struct. This allows for simple bucket-level operations. For example, you can create
+// a bucket struct as so:
+//
+//	client := Client(Config{...})
+//	bucket := client.Bucket("my-bucket")
+//
+//	// Then, you can perform bucket-level operations easily
+//	bucket.Put("my-local-file.txt", "my-remote-file.txt")
 func (c *R2Client) Bucket(bucketName string) R2Bucket {
 	return R2Bucket{
 		Client: c,
@@ -28,7 +39,9 @@ func (c *R2Client) Bucket(bucketName string) R2Bucket {
 	}
 }
 
-// Get all objects in a bucket
+// GetObjects returns a list of all objects in a bucket. This method leverages S3's ListObjectsV2
+// API call. The returned list of objects is of type types.Object, which is a struct containing all
+// available information about the object, such as its name, size, and last modified date.
 func (b *R2Bucket) GetObjects() []types.Object {
 	listObjectsOutput, err := b.Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 		Bucket: &b.Name,
@@ -39,7 +52,8 @@ func (b *R2Bucket) GetObjects() []types.Object {
 	return listObjectsOutput.Contents
 }
 
-// Get paths of all objects in a bucket
+// GetObjectPaths returns a list of all object paths in a bucket, represented as strings. This
+// method is a wrapper around GetObjects, which returns a list of types.Object structs.
 func (b *R2Bucket) GetObjectPaths() []string {
 	var objectPaths []string
 	for _, object := range b.GetObjects() {
@@ -48,7 +62,10 @@ func (b *R2Bucket) GetObjectPaths() []string {
 	return objectPaths
 }
 
-// Print all objects in a bucket
+// PrintObjects prints a list of all objects in a bucket. This method is a wrapper around GetObjects,
+// which returns a list of types.Object structs. The returned list of objects is formatted as a table
+// with the following columns: last modified date, file size, file name. The file size column is
+// formatted as a string with the file size and its unit (e.g. 1.2 MB).
 func (b *R2Bucket) PrintObjects() {
 	// Get creation date, file size, and name of each object
 	var objectData [][]string
@@ -90,7 +107,9 @@ func (b *R2Bucket) PrintObjects() {
 	}
 }
 
-// Put an object in a bucket
+// Put puts an object into a bucket. The inputted object is represented as an io.Reader, which can
+// be created from a file, a string, or any other type that implements the io.Reader interface. The
+// bucketPath argument takes the path for the object to be put in the bucket.
 func (b *R2Bucket) Put(file io.Reader, bucketPath string) error {
 	_, err := b.Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(b.Name),
@@ -100,7 +119,9 @@ func (b *R2Bucket) Put(file io.Reader, bucketPath string) error {
 	return err
 }
 
-// Upload a local file to a bucket
+// Upload uploads a local file to a bucket. The localPath argument takes the path to the local file
+// to be uploaded. The bucketPath argument takes the path for the object to be put in the bucket.
+// This method is a wrapper around Put, which takes an io.Reader as an argument.
 func (b *R2Bucket) Upload(localPath, bucketPath string) {
 	file, err := os.Open(localPath)
 	if err != nil {
@@ -115,7 +136,9 @@ func (b *R2Bucket) Upload(localPath, bucketPath string) {
 	}
 }
 
-// Get an object from a bucket
+// Get gets an object from a bucket. The bucketPath argument takes the path to the object in the
+// bucket. This method returns an io.ReadCloser, which can be used to read the object's contents.
+// This method is a wrapper around the S3 GetObject API call.
 func (b *R2Bucket) Get(bucketPath string) io.ReadCloser {
 	obj, err := b.Client.GetObject(context.TODO(), &s3.GetObjectInput{
 		Bucket: aws.String(b.Name),
@@ -128,7 +151,9 @@ func (b *R2Bucket) Get(bucketPath string) io.ReadCloser {
 	return obj.Body
 }
 
-// Download an object from a bucket
+// Download downloads an object from a bucket to a local file. The bucketPath argument takes the
+// path to the object in the bucket. The localPath argument takes the path to the local file to
+// download to. This method is a wrapper around Get, which returns an io.ReadCloser.
 func (b *R2Bucket) Download(bucketPath, localPath string) {
 	objBody := b.Get(bucketPath)
 
@@ -144,7 +169,9 @@ func (b *R2Bucket) Download(bucketPath, localPath string) {
 	}
 }
 
-// Copy object from one bucket to another
+// Copy copies an object from a bucket to another bucket. The bucketPath argument takes the path to
+// the object in the bucket. The copyToURI argument takes the URI of the bucket to copy the object
+// to. This method is a wrapper around the S3 CopyObject API call.
 func (b *R2Bucket) Copy(bucketPath string, copyToURI R2URI) {
 	_, err := b.Client.CopyObject(context.TODO(), &s3.CopyObjectInput{
 		Bucket:     aws.String(copyToURI.Bucket),
@@ -156,7 +183,8 @@ func (b *R2Bucket) Copy(bucketPath string, copyToURI R2URI) {
 	}
 }
 
-// Delete an object from a bucket
+// Delete deletes an object from a bucket. The bucketPath argument takes the path to the object in
+// the bucket. This method is a wrapper around the S3 DeleteObject API call.
 func (b *R2Bucket) Delete(bucketPath string) {
 	_, err := b.Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 		Bucket: aws.String(b.Name),
@@ -167,7 +195,9 @@ func (b *R2Bucket) Delete(bucketPath string) {
 	}
 }
 
-// Sync a local directory to an R2 bucket
+// SyncLocalToR2 syncs a local directory to an R2 bucket. The sourcePath argument takes the path to
+// the local directory to sync. This method iterates through the local directory and uploads any new
+// or changed files to the bucket.
 func (b *R2Bucket) SyncLocalToR2(sourcePath string) {
 	// Check if source path exists and is a directory
 	if !isDir(sourcePath) {
@@ -203,7 +233,9 @@ func (b *R2Bucket) SyncLocalToR2(sourcePath string) {
 	}
 }
 
-// Sync an R2 bucket to a local directory
+// SyncR2ToLocal syncs an R2 bucket to a local directory. The destinationPath argument takes the
+// path to the local directory to sync. This method iterates through the bucket and downloads any
+// new or changed files to the local directory.
 func (b *R2Bucket) SyncR2ToLocal(destinationPath string) {
 	// Check if destination path exists and is a directory
 	if !isDir(destinationPath) {
@@ -224,7 +256,9 @@ func (b *R2Bucket) SyncR2ToLocal(destinationPath string) {
 	}
 }
 
-// Sync an R2 bucket to another R2 bucket
+// SyncR2ToR2 syncs an R2 bucket to another R2 bucket. The destBucket argument takes the bucket to
+// sync to. This method iterates through the bucket and copies any new or changed files to the
+// destination bucket.
 func (b *R2Bucket) SyncR2ToR2(destBucket R2Bucket) {
 	// Get extant paths and their MD5 checksums in source bucket
 	sourceBucketObjects := make(map[string]string)
@@ -247,7 +281,9 @@ func (b *R2Bucket) SyncR2ToR2(destBucket R2Bucket) {
 	}
 }
 
-// Get presigned URL for object to get from bucket
+// GetURL returns a presigned URL for an object to get from a bucket. The uri argument takes the
+// URI of the object in the bucket. This method is a wrapper around the S3 PresignGetObject API
+// call.
 func (pc *R2PresignClient) GetURL(uri R2URI) string {
 	presignResult, err := pc.PresignGetObject(context.TODO(), &s3.GetObjectInput{
 		Bucket: aws.String(uri.Bucket),
@@ -259,7 +295,8 @@ func (pc *R2PresignClient) GetURL(uri R2URI) string {
 	return presignResult.URL
 }
 
-// Get presigned URL for object to put in bucket
+// PutURL returns a presigned URL for an object to put in a bucket. The uri argument takes the URI
+// of the object in the bucket. This method is a wrapper around the S3 PresignPutObject API call.
 func (pc *R2PresignClient) PutURL(uri R2URI) string {
 	presignResult, err := pc.PresignPutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(uri.Bucket),

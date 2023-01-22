@@ -35,6 +35,6 @@ var rmCmd = &cobra.Command{
 }
 
 func init() {
-	// Add the rm subcommand to the root command
+	// Add the rm command to the root command
 	rootCmd.AddCommand(rmCmd)
 }

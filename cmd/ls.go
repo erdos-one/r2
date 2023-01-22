@@ -37,6 +37,6 @@ var lsCmd = &cobra.Command{
 }
 
 func init() {
-	// Add the ls subcommand to the root command
+	// Add the ls command to the root command
 	rootCmd.AddCommand(lsCmd)
 }

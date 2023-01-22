@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any commands
 var rootCmd = &cobra.Command{
 	Use:   "r2",
 	Short: "Command Line Interface for Cloudflare R2 Storage",
@@ -28,6 +28,6 @@ func Execute() {
 }
 
 func init() {
-	// Enable profile flag for all subcommands
+	// Enable profile flag for all commands
 	rootCmd.PersistentFlags().StringP("profile", "p", "default", "R2 profile to use")
 }

@@ -46,6 +46,6 @@ var syncCmd = &cobra.Command{
 }
 
 func init() {
-	// Add the sync subcommand to the root command
+	// Add the sync command to the root command
 	rootCmd.AddCommand(syncCmd)
 }

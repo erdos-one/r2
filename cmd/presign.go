@@ -40,6 +40,6 @@ var presignCmd = &cobra.Command{
 }
 
 func init() {
-	// Add the presign subcommand to the root command
+	// Add the presign command to the root command
 	rootCmd.AddCommand(presignCmd)
 }

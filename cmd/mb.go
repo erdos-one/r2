@@ -33,6 +33,6 @@ var mbCmd = &cobra.Command{
 }
 
 func init() {
-	// Add the mb subcommand to the root command
+	// Add the mb command to the root command
 	rootCmd.AddCommand(mbCmd)
 }

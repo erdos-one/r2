@@ -14,13 +14,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Format configuration string
+// configString formats a set of Cloudflare R2 credentials into a string that can be written to the
+// ~/.r2 configuration file. Allowing for multiple profiles, each profile is formatted as a section
+// with the profile name in square brackets. The profile name is followed by the account ID, access
+// key ID, and secret access key.
 func configString(c pkg.Config) string {
 	configTemplate := "[%s]\naccount_id=%s\naccess_key_id=%s\nsecret_access_key=%s"
 	return fmt.Sprintf(configTemplate, c.Profile, c.AccountID, c.AccessKeyID, c.SecretAccessKey)
 }
 
-// ~/.r2 configuration file path
+// getConfigPath returns the path to the ~/.r2 configuration file, accounting for different
+// operating systems' conventions for naming the home directory.
 func getConfigPath() string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -29,9 +33,11 @@ func getConfigPath() string {
 	return filepath.Join(homeDir, ".r2")
 }
 
+// R2ConfigFile globally defines the path to the ~/.r2 configuration file.
 var R2ConfigFile = getConfigPath()
 
-// Get profile by name or create new one
+// getProfile returns the Cloudflare R2 credentials for the specified profile. If the profile does
+// not exist, it is created interactively and saved to the ~/.r2 configuration file.
 func getProfile(profileName string) pkg.Config {
 	// Get profiles
 	profiles := getConfig(false)
@@ -50,7 +56,8 @@ func getProfile(profileName string) pkg.Config {
 	return profile
 }
 
-// Get configuration credentials interactively
+// getCredentials prompts the user to enter the Cloudflare R2 credentials for a specified profile.
+// If no profile is specified, the user is prompted to enter a profile name.
 func getCredentials(profile string) pkg.Config {
 	var c pkg.Config
 
@@ -145,7 +152,8 @@ func getConfig(createIfNotPresent bool) map[string]pkg.Config {
 	return profiles
 }
 
-// List all profile names
+// listProfiles returns a list of all profiles in the ~/.r2 configuration file. Profile names are
+// sorted alphabetically, irrespective of case, with the default profile always first.
 func listProfiles() []string {
 	// Get profiles
 	profiles := getConfig(false)
@@ -169,7 +177,9 @@ func listProfiles() []string {
 	return profileNames
 }
 
-// Write configuration to file
+// writeConfig writes the provided profiles to the ~/.r2 configuration file. If a profile already
+// exists, it is overwritten. If all credentials are not provided, the function fails. Profiles are
+// sorted alphabetically, irrespective of case, with the default profile always first.
 func writeConfig(c pkg.Config) {
 	// Read configuration file
 	profiles := getConfig(false)
@@ -305,11 +315,12 @@ Be careful not to share your API Token credentials with anyone.`,
 	},
 }
 
+// init adds the configure command to the root command and adds flags to the configure command
 func init() {
-	// Add the configure subcommand to the root command
+	// Add the configure command to the root command
 	rootCmd.AddCommand(configureCmd)
 
-	// Add flags to the configure subcommand
+	// Add flags to the configure command
 	configureCmd.Flags().BoolP("list", "l", false, "List all named profiles")
 	configureCmd.Flags().String("profile", "", "Configure a named profile")
 	configureCmd.Flags().String("account-id", "", "R2 Account ID")

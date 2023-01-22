@@ -49,6 +49,6 @@ var cpCmd = &cobra.Command{
 }
 
 func init() {
-	// Add the cp subcommand to the root command
+	// Add the cp command to the root command
 	rootCmd.AddCommand(cpCmd)
 }

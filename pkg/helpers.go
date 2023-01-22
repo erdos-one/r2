@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// Check if slice contains string
+// Contains checks if a string is in a slice of strings.
 func Contains(slice []string, str string) bool {
 	for _, v := range slice {
 		if v == str {
@@ -22,7 +22,7 @@ func Contains(slice []string, str string) bool {
 	return false
 }
 
-// Convert file size to kb, mb, gb, etc.
+// fileSizeFmt converts a file size in bytes to a human-readable format.
 func fileSizeFmt(b int64) []string {
 	if b < 1024 {
 		// If size is less than 1 KB, return size in bytes
@@ -39,22 +39,19 @@ func fileSizeFmt(b int64) []string {
 	}
 }
 
-// Check if file exists
+// fileExists checks if a file exists.
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
 
-// Check if a file is a directory
+// isDir checks if a path exists and is a directory.
 func isDir(path string) bool {
 	fileInfo, err := os.Stat(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return fileInfo.IsDir()
+	return err == nil && fileInfo.IsDir()
 }
 
-// Ensure a directory exists
+// ensureDirExists creates a directory if it does not exist.
 func ensureDirExists(path string) {
 	dir := filepath.Dir(path)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -62,23 +59,24 @@ func ensureDirExists(path string) {
 	}
 }
 
-// Remove R2 URI prefix
+// RemoveR2URIPrefix removes the r2:// prefix from an R2 URI.
 func RemoveR2URIPrefix(uri string) string {
 	return strings.TrimPrefix(uri, "r2://")
 }
 
-// Hold R2 URI bucket and file path
+// R2URI represents an R2 URI. It contains the bucket name and the path to the file.
 type R2URI struct {
 	Bucket string
 	Path   string
 }
 
-// Determine whether string is an R2 URI
+// IsR2URI checks if a string is an R2 URI. R2 URI's start with r2://
 func IsR2URI(uri string) bool {
 	return strings.HasPrefix(uri, "r2://")
 }
 
-// Parse R2 URI
+// ParseR2URI parses an R2 URI and returns a R2URI struct. It assumes that the URI is valid
+// and does not check if the bucket or file exists.
 func ParseR2URI(uri string) R2URI {
 	return R2URI{
 		Bucket: regexp.MustCompile(`r2://([\w-]+)/.+`).FindStringSubmatch(uri)[1],
@@ -86,7 +84,7 @@ func ParseR2URI(uri string) R2URI {
 	}
 }
 
-// Generate MD5 hash of file
+// md5sum returns the MD5 hash of a file given its path.
 func md5sum(path string) string {
 	// Get file
 	file, err := os.Open(path)
