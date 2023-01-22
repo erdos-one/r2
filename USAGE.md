@@ -41,3 +41,32 @@ The `r2` library can be used to interact with R2 from within your Go application
 exists in the [pkg](pkg) directory and is well documented.
 
 Documentation may be found [here](https://pkg.go.dev/github.com/erdos-one/r2/pkg).
+
+### Example
+
+Uploading a file to a bucket:
+
+```go
+package main
+
+import (
+  r2 "github.com/erdos-one/r2/pkg"
+)
+
+func main() {
+  // Create client
+  config := r2.Config{
+    Profile:         "default",
+    AccountID:       "<ACCOUNT ID>",
+    AccessKeyID:     "<ACCESS KEY ID>",
+    SecretAccessKey: "<SECRET ACCESS KEY>"
+  }
+  client := r2.Client(config)
+
+  // Connect to bucket
+  bucket := client.Bucket("my-bucket")
+
+  // Upload a file to the bucket
+  bucket.Upload("my-local-file.txt", "my-remote-file.txt")
+}
+```
