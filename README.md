@@ -35,7 +35,7 @@ gap.
 To install the `r2` CLI, simply run the following command:
 
 ```bash
-sh <(curl https://install.erdos.one/r2)
+go install github.com/erdos-one/r2@latest
 ```
 
 For more installation options, see [INSTALL.md](INSTALL.md).
