@@ -36,23 +36,20 @@ type R2Client struct {
 // endpoint and credentials for the given profile. This is used to create the R2Client and
 // R2PresignClient structs, which are used for all R2 operations.
 func s3Client(c Config) *s3.Client {
-	// Get R2 account endpoint
-	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL: fmt.Sprintf("https://%s.r2.cloudflarestorage.com", c.AccountID),
-		}, nil
-	})
-
-	// Set credentials
+	// R2 requires a dummy region - using "auto" as it's Cloudflare's convention
 	cfg, err := awsConfig.LoadDefaultConfig(context.TODO(),
-		awsConfig.WithEndpointResolverWithOptions(r2Resolver),
+		awsConfig.WithRegion("auto"),
 		awsConfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(c.AccessKeyID, c.SecretAccessKey, "")),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return s3.NewFromConfig(cfg)
+	// Create S3 client with custom R2 endpoint
+	return s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(fmt.Sprintf("https://%s.r2.cloudflarestorage.com", c.AccountID))
+		o.UsePathStyle = true
+	})
 }
 
 // Client returns a new R2 client struct so we can add methods to it. The client is configured with
