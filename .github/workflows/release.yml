@@ -39,6 +39,17 @@ jobs:
           git config user.name github-actions
           git config user.email github-action@github.com
           git add install.sh
-          git commit -m "$(git describe --tags --abbrev=0) install script update"
+          if ! git diff --staged --quiet; then
+            git commit -m "$(git describe --tags --abbrev=0) install script update"
+            echo "CHANGES_COMMITTED=true" >> $GITHUB_ENV
+          else
+            echo "No changes to commit"
+            echo "CHANGES_COMMITTED=false" >> $GITHUB_ENV
+          fi
       - name: Push install script
-        run: git push origin HEAD:main
+        run: |
+          if [ "$CHANGES_COMMITTED" = "true" ]; then
+            git push origin HEAD:main
+          else
+            echo "No changes to push"
+          fi
