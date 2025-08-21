@@ -71,7 +71,7 @@ func (b *R2Bucket) PrintObjects() {
 	var objectData [][]string
 	for _, object := range b.GetObjects() {
 		// Get file size
-		fs := fileSizeFmt(object.Size)
+		fs := fileSizeFmt(*object.Size)
 
 		// Append last modified, file size, and file name to objectData
 		objectData = append(objectData, []string{
