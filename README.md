@@ -56,6 +56,7 @@ r2 help
 - `r2 ls` — List either all buckets or all objects in a bucket
 - `r2 mb` — Create an R2 bucket
 - `r2 mv` — Moves a local file or R2 object to another location locally or in R2.
+- `r2 pipe` — Stream data from stdin to an R2 object
 - `r2 presign` — Generate a pre-signed URL for a Cloudflare R2 object
 - `r2 rb` — Remove an R2 bucket
 - `r2 rm` — Remove an object from an R2 bucket
