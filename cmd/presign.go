@@ -25,7 +25,7 @@ var presignCmd = &cobra.Command{
 
 		for _, arg := range args {
 			// Get R2 URI components from argument
-			uri := pkg.ParseR2URI(arg)
+			uri := pkg.ParseR2URISafe(arg)
 
 			// If object exists in bucket, print presigned URL to get object from bucket, otherwise print
 			// presigned URL to put object in bucket

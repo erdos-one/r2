@@ -27,17 +27,24 @@ var syncCmd = &cobra.Command{
 			destinationPath := args[1]
 			if !pkg.IsR2URI(sourcePath) && pkg.IsR2URI(destinationPath) {
 				// Sync local directory to R2 bucket
-				b := c.Bucket(pkg.RemoveR2URIPrefix(destinationPath))
-				b.SyncLocalToR2(sourcePath)
+				destURI := pkg.ParseR2URISafe(destinationPath)
+				b := c.Bucket(destURI.Bucket)
+				b.SyncLocalToR2WithPrefix(sourcePath, destURI.Path)
 			} else if pkg.IsR2URI(sourcePath) && !pkg.IsR2URI(destinationPath) {
 				// Sync R2 bucket to local directory
-				b := c.Bucket(pkg.RemoveR2URIPrefix(sourcePath))
-				b.SyncR2ToLocal(destinationPath)
+				sourceURI := pkg.ParseR2URISafe(sourcePath)
+				b := c.Bucket(sourceURI.Bucket)
+				b.SyncR2ToLocalWithPrefix(destinationPath, sourceURI.Path)
 			} else if pkg.IsR2URI(sourcePath) && pkg.IsR2URI(destinationPath) {
 				// Sync R2 bucket to R2 bucket
-				b := c.Bucket(pkg.RemoveR2URIPrefix(sourcePath))
-				destBucket := c.Bucket(pkg.RemoveR2URIPrefix(destinationPath))
-				b.SyncR2ToR2(destBucket)
+				sourceURI := pkg.ParseR2URISafe(sourcePath)
+				destURI := pkg.ParseR2URISafe(destinationPath)
+				b := c.Bucket(sourceURI.Bucket)
+				destBucket := c.Bucket(destURI.Bucket)
+				b.SyncR2ToR2WithPrefix(destBucket, sourceURI.Path, destURI.Path)
+			} else if !pkg.IsR2URI(sourcePath) && !pkg.IsR2URI(destinationPath) {
+				// Both paths are local - not supported
+				log.Fatal("Local-to-local sync is not supported. At least one path must be an R2 URI (r2://bucket/path).")
 			}
 		} else {
 			log.Fatal("Please provide both a source and destination path.")

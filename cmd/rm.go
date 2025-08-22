@@ -24,7 +24,7 @@ var rmCmd = &cobra.Command{
 		// If a bucket name is provided, create the bucket
 		for _, arg := range args {
 			if pkg.IsR2URI(arg) {
-				uri := pkg.ParseR2URI(arg)
+				uri := pkg.ParseR2URISafe(arg)
 				b := c.Bucket(uri.Bucket)
 				b.Delete(uri.Path)
 			} else {
