@@ -64,6 +64,20 @@ func RemoveR2URIPrefix(uri string) string {
 	return strings.TrimPrefix(uri, "r2://")
 }
 
+// ExtractBucketName extracts just the bucket name from an R2 URI.
+// For example: "r2://bucket/" returns "bucket", "r2://bucket/path/" returns "bucket"
+func ExtractBucketName(uri string) string {
+	// Remove the r2:// prefix
+	withoutPrefix := strings.TrimPrefix(uri, "r2://")
+
+	// Find the first slash and take everything before it
+	// If no slash exists, the entire string is the bucket name
+	if idx := strings.Index(withoutPrefix, "/"); idx != -1 {
+		return withoutPrefix[:idx]
+	}
+	return withoutPrefix
+}
+
 // R2URI represents an R2 URI. It contains the bucket name and the path to the file.
 type R2URI struct {
 	Bucket string
@@ -81,6 +95,29 @@ func ParseR2URI(uri string) R2URI {
 	return R2URI{
 		Bucket: regexp.MustCompile(`r2://([\w-]+)/.+`).FindStringSubmatch(uri)[1],
 		Path:   regexp.MustCompile(`r2://[\w-]+/(.+)`).FindStringSubmatch(uri)[1],
+	}
+}
+
+// ParseR2URISafe parses an R2 URI and returns a R2URI struct.
+// Handles URIs with or without paths (e.g., "r2://bucket/" or "r2://bucket/path/").
+func ParseR2URISafe(uri string) R2URI {
+	// Remove the r2:// prefix
+	withoutPrefix := strings.TrimPrefix(uri, "r2://")
+
+	// Find the first slash to separate bucket and path
+	if idx := strings.Index(withoutPrefix, "/"); idx != -1 {
+		bucket := withoutPrefix[:idx]
+		path := withoutPrefix[idx+1:] // Everything after the first slash
+		return R2URI{
+			Bucket: bucket,
+			Path:   path,
+		}
+	}
+
+	// No slash found, entire string is bucket name
+	return R2URI{
+		Bucket: withoutPrefix,
+		Path:   "",
 	}
 }
 
