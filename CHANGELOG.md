@@ -2,6 +2,24 @@
 
 This changelog goes through all the changes that have been made in each release.
 
+## v0.1.3-alpha
+
+- FIXED
+  - [`GetObjects` function](pkg/bucket.go) — now properly paginates through S3 API responses to retrieve all objects from buckets with more than 1000 objects
+  - `sync` command — fixed for large buckets (>1000 objects) that previously would only sync the first 1000 objects
+  - `ls` command — now shows complete listings for buckets with more than 1000 objects
+
+## v0.1.2-alpha
+
+- FIXED
+  - [`ls` command](cmd/ls.go) — now requires at least one bucket argument and displays usage information when run without arguments instead of attempting to list all buckets
+
+## v0.1.1-alpha
+
+- FIXED
+  - GoReleaser configuration — updated for v2 compatibility
+  - Install script — improved handling of unchanged script updates
+
 ## v0.1.0-alpha
 
 First release of `r2`! This release includes all the commands of the AWS CLI's `s3` subcommand, but
