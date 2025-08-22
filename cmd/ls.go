@@ -10,8 +10,22 @@ import (
 
 // lsCmd represents the ls command
 var lsCmd = &cobra.Command{
-	Use:   "ls",
-	Short: "List either all buckets or all objects in a bucket",
+	Use:   "ls [bucket-name]",
+	Short: "List objects in a bucket",
+	Long: `List objects in an R2 bucket.
+
+To list objects in a bucket, provide the bucket name as an argument.
+
+Examples:
+  # List all objects in a bucket
+  r2 ls example-bucket
+
+  # List objects in multiple buckets
+  r2 ls bucket1 bucket2
+
+  # List objects using R2 URI format
+  r2 ls r2://example-bucket`,
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get profile client
 		profileName, err := cmd.Flags().GetString("profile")
@@ -20,18 +34,13 @@ var lsCmd = &cobra.Command{
 		}
 		c := pkg.Client(getProfile(profileName))
 
-		if len(args) > 0 {
-			// If args passed to ls, list objects in each bucket passed
-			for _, bucketName := range args {
-				// Remove URI scheme if present
-				bucketName = pkg.RemoveR2URIPrefix(bucketName)
+		// List objects in each bucket passed
+		for _, bucketName := range args {
+			// Remove URI scheme if present
+			bucketName = pkg.RemoveR2URIPrefix(bucketName)
 
-				b := c.Bucket(bucketName)
-				b.PrintObjects()
-			}
-		} else {
-			// If no args passed to ls, list all buckets
-			c.PrintBuckets()
+			b := c.Bucket(bucketName)
+			b.PrintObjects()
 		}
 	},
 }
