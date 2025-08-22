@@ -64,20 +64,6 @@ func RemoveR2URIPrefix(uri string) string {
 	return strings.TrimPrefix(uri, "r2://")
 }
 
-// ExtractBucketName extracts just the bucket name from an R2 URI.
-// For example: "r2://bucket/" returns "bucket", "r2://bucket/path/" returns "bucket"
-func ExtractBucketName(uri string) string {
-	// Remove the r2:// prefix
-	withoutPrefix := strings.TrimPrefix(uri, "r2://")
-
-	// Find the first slash and take everything before it
-	// If no slash exists, the entire string is the bucket name
-	if idx := strings.Index(withoutPrefix, "/"); idx != -1 {
-		return withoutPrefix[:idx]
-	}
-	return withoutPrefix
-}
-
 // R2URI represents an R2 URI. It contains the bucket name and the path to the file.
 type R2URI struct {
 	Bucket string
@@ -89,35 +75,33 @@ func IsR2URI(uri string) bool {
 	return strings.HasPrefix(uri, "r2://")
 }
 
-// ParseR2URI parses an R2 URI and returns a R2URI struct. It assumes that the URI is valid
-// and does not check if the bucket or file exists.
-func ParseR2URI(uri string) R2URI {
-	return R2URI{
-		Bucket: regexp.MustCompile(`r2://([\w-]+)/.+`).FindStringSubmatch(uri)[1],
-		Path:   regexp.MustCompile(`r2://[\w-]+/(.+)`).FindStringSubmatch(uri)[1],
-	}
-}
-
 // ParseR2URISafe parses an R2 URI and returns a R2URI struct.
 // Handles URIs with or without paths (e.g., "r2://bucket/" or "r2://bucket/path/").
+// Validates that bucket names match the expected format (alphanumeric and hyphens only).
 func ParseR2URISafe(uri string) R2URI {
 	// Remove the r2:// prefix
 	withoutPrefix := strings.TrimPrefix(uri, "r2://")
 
 	// Find the first slash to separate bucket and path
+	var bucket, path string
 	if idx := strings.Index(withoutPrefix, "/"); idx != -1 {
-		bucket := withoutPrefix[:idx]
-		path := withoutPrefix[idx+1:] // Everything after the first slash
-		return R2URI{
-			Bucket: bucket,
-			Path:   path,
-		}
+		bucket = withoutPrefix[:idx]
+		path = withoutPrefix[idx+1:] // Everything after the first slash
+	} else {
+		// No slash found, entire string is bucket name
+		bucket = withoutPrefix
+		path = ""
 	}
 
-	// No slash found, entire string is bucket name
+	// Validate bucket name format (lowercase alphanumeric and hyphens only)
+	// R2 follows S3 naming conventions: lowercase letters, numbers, and hyphens
+	if !regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$`).MatchString(bucket) {
+		log.Fatalf("Invalid bucket name format: %s. Bucket names must contain only lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen.", bucket)
+	}
+
 	return R2URI{
-		Bucket: withoutPrefix,
-		Path:   "",
+		Bucket: bucket,
+		Path:   path,
 	}
 }
 
