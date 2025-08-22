@@ -42,14 +42,39 @@ func (c *R2Client) Bucket(bucketName string) R2Bucket {
 // GetObjects returns a list of all objects in a bucket. This method leverages S3's ListObjectsV2
 // API call. The returned list of objects is of type types.Object, which is a struct containing all
 // available information about the object, such as its name, size, and last modified date.
+// This function properly handles pagination to retrieve all objects, even if there are more than 1000.
 func (b *R2Bucket) GetObjects() []types.Object {
-	listObjectsOutput, err := b.Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-		Bucket: &b.Name,
-	})
-	if err != nil {
-		log.Fatal(err)
+	var allObjects []types.Object
+	var continuationToken *string
+
+	for {
+		input := &s3.ListObjectsV2Input{
+			Bucket: &b.Name,
+		}
+
+		// Add continuation token if we have one from previous iteration
+		if continuationToken != nil {
+			input.ContinuationToken = continuationToken
+		}
+
+		listObjectsOutput, err := b.Client.ListObjectsV2(context.TODO(), input)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Append the objects from this page to our complete list
+		allObjects = append(allObjects, listObjectsOutput.Contents...)
+
+		// Check if there are more pages to fetch
+		if listObjectsOutput.IsTruncated != nil && *listObjectsOutput.IsTruncated {
+			continuationToken = listObjectsOutput.NextContinuationToken
+		} else {
+			// No more pages, we're done
+			break
+		}
 	}
-	return listObjectsOutput.Contents
+
+	return allObjects
 }
 
 // GetObjectPaths returns a list of all object paths in a bucket, represented as strings. This
