@@ -107,6 +107,6 @@ func (c *R2Client) RemoveBucket(bucket string) {
 	_, err := c.DeleteBucket(context.TODO(), &s3.DeleteBucketInput{
 		Bucket: aws.String(bucket)})
 	if err != nil {
-		log.Fatalf("Couldn't create bucket %s: %v\n", bucket, err)
+		log.Fatalf("Couldn't delete bucket %s: %v\n", bucket, err)
 	}
 }
