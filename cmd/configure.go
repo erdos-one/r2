@@ -118,7 +118,7 @@ func getConfig(createIfNotPresent bool) map[string]pkg.Config {
 	// Parse configuration file into profiles
 	var profiles = make(map[string]pkg.Config)
 
-	profilesRe := regexp.MustCompile(`\[[\w\s\]=]+`)
+	profilesRe := regexp.MustCompile(`\[[^\]]+\](?:[^[]*(?:account_id|access_key_id|secret_access_key)\s*=\s*[^\s\n]+[^[]*)*`)
 	for _, p := range profilesRe.FindAllString(configString, -1) {
 		// Parse profiles
 		var profile pkg.Config
