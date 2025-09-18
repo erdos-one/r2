@@ -184,9 +184,9 @@ func writeConfig(c pkg.Config) {
 	// Read configuration file
 	profiles := getConfig(false)
 
-	// If not all credentials are provided, fail
-	if c.AccountID == "" || c.AccessKeyID == "" || c.SecretAccessKey == "" {
-		log.Fatal("All credentials must be provided")
+	// If not all credentials are provided or contain only whitespace, fail
+	if strings.TrimSpace(c.AccountID) == "" || strings.TrimSpace(c.AccessKeyID) == "" || strings.TrimSpace(c.SecretAccessKey) == "" {
+		log.Fatal("All credentials must be provided and cannot be empty or contain only whitespace")
 	}
 
 	// Add profile to configuration
