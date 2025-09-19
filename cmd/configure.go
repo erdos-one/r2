@@ -14,6 +14,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	emptyLineRe       = regexp.MustCompile(`^\n$`)
+	profilesRe        = regexp.MustCompile(`\[[^\]]+\](?:[^[]*(?:account_id|access_key_id|secret_access_key)\s*=\s*[^\s\n]+[^[]*)*`)
+	profileNameRe     = regexp.MustCompile(`\[\w+\]`)
+	profileNameExtRe  = regexp.MustCompile(`\[(\w+)\]`)
+	accountIDRe       = regexp.MustCompile(`account_id\s*=\s*(\w+)`)
+	accessKeyIDRe     = regexp.MustCompile(`access_key_id\s*=\s*(\w+)`)
+	secretAccessKeyRe = regexp.MustCompile(`secret_access_key\s*=\s*(\w+)`)
+)
+
 // configString formats a set of Cloudflare R2 credentials into a string that can be written to the
 // ~/.r2 configuration file. Allowing for multiple profiles, each profile is formatted as a section
 // with the profile name in square brackets. The profile name is followed by the account ID, access
@@ -113,37 +123,33 @@ func getConfig(createIfNotPresent bool) map[string]pkg.Config {
 	}
 
 	// Remove empty lines
-	configString := regexp.MustCompile(`^\n$`).ReplaceAllString(string(c), "")
+	configString := emptyLineRe.ReplaceAllString(string(c), "")
 
 	// Parse configuration file into profiles
 	var profiles = make(map[string]pkg.Config)
 
-	profilesRe := regexp.MustCompile(`\[[^\]]+\](?:[^[]*(?:account_id|access_key_id|secret_access_key)\s*=\s*[^\s\n]+[^[]*)*`)
 	for _, p := range profilesRe.FindAllString(configString, -1) {
 		// Parse profiles
 		var profile pkg.Config
 
 		// Get profile name
-		if regexp.MustCompile(`\[\w+\]`).MatchString(p) {
-			profile.Profile = regexp.MustCompile(`\[(\w+)\]`).FindAllStringSubmatch(p, -1)[0][1]
+		if profileNameRe.MatchString(p) {
+			profile.Profile = profileNameExtRe.FindAllStringSubmatch(p, -1)[0][1]
 		}
 
 		// Get account ID
-		accountIDRe := regexp.MustCompile(`account_id\s*=\s*(\w+)`)
 		if accountIDRe.MatchString(p) {
 			profile.AccountID = accountIDRe.FindAllStringSubmatch(p, -1)[0][1]
 		}
 
 		// Get access key ID
-		akidRe := regexp.MustCompile(`access_key_id\s*=\s*(\w+)`)
-		if akidRe.MatchString(p) {
-			profile.AccessKeyID = akidRe.FindAllStringSubmatch(p, -1)[0][1]
+		if accessKeyIDRe.MatchString(p) {
+			profile.AccessKeyID = accessKeyIDRe.FindAllStringSubmatch(p, -1)[0][1]
 		}
 
 		// Get secret access key
-		sakRe := regexp.MustCompile(`secret_access_key\s*=\s*(\w+)`)
-		if sakRe.MatchString(p) {
-			profile.SecretAccessKey = sakRe.FindAllStringSubmatch(p, -1)[0][1]
+		if secretAccessKeyRe.MatchString(p) {
+			profile.SecretAccessKey = secretAccessKeyRe.FindAllStringSubmatch(p, -1)[0][1]
 		}
 
 		profiles[profile.Profile] = profile
