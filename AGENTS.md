@@ -40,7 +40,7 @@ This repository hosts `r2`, a Go (1.24) CLI and library for Cloudflare R2 built 
 
 ## Process
 
-This is a CLI, not the Erdos product. Keep the loop thinner than the monorepo.
+This is a CLI, not the Erdos product. Keep the loop thinner than the monorepo. This **Process** section is canonical for Cursor, Claude Code, and Codex — do not put a fork only under `.cursor/`. `CLAUDE.md` points here; there is no `.codex/` tree.
 
 ### Merge-ready
 
