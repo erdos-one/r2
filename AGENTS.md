@@ -51,9 +51,9 @@ This is a CLI, not the Erdos product. Keep the loop thinner than the monorepo. T
 
 ### Verify
 
-Named path (same check set as above): `go fmt ./... && go vet ./... && go test ./...`. Unit tests must not make live R2 calls. If a change touches real R2 behavior, name an integration or dry-run note on the PR; unit mocks are not enough.
+Named path (the Checks set above): `go fmt ./... && go vet ./... && go test ./...`, then `go mod tidy` with no `go.mod`/`go.sum` drift. Unit tests must not make live R2 calls. If a change touches real R2 behavior, name an integration or dry-run note on the PR; unit mocks are not enough.
 
 ### Sequence
 
 - Prefer small PRs. Open mega work as draft and split before ready-for-review.
-- Loop budget: style/test P2 remediations ≤2, then stop. Security and lockfile issues always get fixed.
+- Loop budget: at most two batched review rounds for style/test P2s (wait → one push → one reconfirm is one round). Then stop; leave remaining P2 threads open and report not-ready with a named follow-up. Security and lockfile issues always get fixed.
