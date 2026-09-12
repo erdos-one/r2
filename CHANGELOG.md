@@ -2,6 +2,13 @@
 
 This changelog goes through all the changes that have been made in each release.
 
+## [0.4.1](https://github.com/erdos-ai/r2/compare/v0.4.0...v0.4.1) (2026-09-12)
+
+
+### Documentation
+
+* add thin pstack-compliance process to AGENTS.md ([#88](https://github.com/erdos-ai/r2/issues/88)) ([ad3ebdd](https://github.com/erdos-ai/r2/commit/ad3ebdde9d9aa48c59679c21f88675e47b6badb2))
+
 ## [0.4.0](https://github.com/erdos-ai/r2/compare/v0.3.4...v0.4.0) (2026-06-20)
 
 
