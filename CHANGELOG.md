@@ -5,6 +5,16 @@ This changelog goes through all the changes that have been made in each release.
 ## [0.4.1](https://github.com/erdos-ai/r2/compare/v0.4.0...v0.4.1) (2026-09-12)
 
 
+### Bug Fixes
+
+* replace the deprecated AWS S3 manager with transfermanager, keep multipart option behavior, validate minimum part size, stream pipe uploads directly, and update smithy-go to v1.27.3 (ERD-146) ([acddf27](https://github.com/erdos-ai/r2/commit/acddf27))
+
+### Miscellaneous
+
+* rename the Go module path from `github.com/erdos-one/r2` to `github.com/erdos-ai/r2` after the org rename; library consumers must update their import path ([#75](https://github.com/erdos-ai/r2/issues/75))
+* point the one-line installer at the GitHub-hosted `install.sh` ([#74](https://github.com/erdos-ai/r2/issues/74))
+* bump the AWS SDK for Go v2 and other dependencies through the weekly Dependabot group ([#77](https://github.com/erdos-ai/r2/issues/77) through [#87](https://github.com/erdos-ai/r2/issues/87))
+
 ### Documentation
 
 * add thin pstack-compliance process to AGENTS.md ([#88](https://github.com/erdos-ai/r2/issues/88)) ([ad3ebdd](https://github.com/erdos-ai/r2/commit/ad3ebdde9d9aa48c59679c21f88675e47b6badb2))
