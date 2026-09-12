@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 R2 is a CLI and Go library for working with Cloudflare's R2 Storage service. It implements AWS S3-compatible commands to provide simple-to-use features similar to the AWS CLI's s3 subcommand. The project is written in Go and uses the Cobra framework for CLI commands.
 
+## Process
+
+Process, merge-ready, and verify rules live in [`AGENTS.md`](AGENTS.md) (**Process**).
+
 ## Development Commands
 
 ### Building the Project

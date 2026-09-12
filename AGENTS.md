@@ -32,8 +32,28 @@ This repository hosts `r2`, a Go (1.24) CLI and library for Cloudflare R2 built 
 ## Commit & Pull Request Guidelines
 - Commits: follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`), as in this repo’s history.
 - PRs must include: clear description, linked issue, CLI examples (e.g., `r2 cp r2://bucket/a b`), and doc updates when UX changes.
-- Checks: ensure `go fmt`, `go vet`, `go test`, and `go mod tidy` pass; avoid diff in `go.sum` unless necessary.
+- Checks: ensure `go fmt`, `go vet`, `go test`, and `go mod tidy` pass; avoid diff in `go.sum` unless necessary. Agent-loop and merge-ready policy: **Process**.
 
 ## Security & Configuration Tips
 - Never commit credentials; `r2 configure` stores profiles in `~/.r2`.
 - Redact secrets in logs/output; validate bucket names and paths (see `pkg/helpers.go`).
+
+## Process
+
+This is a CLI, not the Erdos product. Keep the loop thinner than the monorepo. Every coding agent, in any harness, reads this file. Do not add per-tool copies or forks.
+
+### Merge-ready
+
+- **Human eyes:** CI green, no open bot review threads, base clean.
+- Rebase or conflict-resolve on the existing branch. Never leave **Update branch** as a human click. Do not open a superseding PR for Dependabot or in-flight fixes.
+- Wait for every participating review bot to finish on one SHA, then one remediation push, then one reconfirm. A bot that never started is not participating. Do not push-per-comment.
+- Erdos-org Dependabot is human-merge (agents do not merge): report ready. Greptile 5/5 when it reviewed; "no reviewable files" counts as clear. Socket unsafe = hold.
+
+### Verify
+
+Named path (the Checks set above): `go fmt ./... && go vet ./... && go test ./...`, then `go mod tidy` with no `go.mod`/`go.sum` drift. Unit tests must not make live R2 calls. If a change touches real R2 behavior, name an integration or dry-run note on the PR; unit mocks are not enough.
+
+### Sequence
+
+- Prefer small PRs. Open mega work as draft and split before ready-for-review.
+- Loop budget: at most two batched review rounds for style/test P2s (wait → one push → one reconfirm is one round). Then stop; leave remaining P2 threads open and report not-ready with a named follow-up. Security and lockfile issues always get fixed.
