@@ -40,14 +40,14 @@ This repository hosts `r2`, a Go (1.24) CLI and library for Cloudflare R2 built 
 
 ## Process
 
-This is a CLI, not the Erdos product. Keep the loop thinner than the monorepo. This **Process** section is canonical for Cursor, Claude Code, and Codex — do not put a fork only under `.cursor/`. `CLAUDE.md` points here; there is no `.codex/` tree.
+This is a CLI, not the Erdos product. Keep the loop thinner than the monorepo. Every coding agent, in any harness, reads this file. Do not add per-tool copies or forks.
 
 ### Merge-ready
 
-- **Will eyes:** CI green, no open Greptile/Codex threads, base clean.
+- **Human eyes:** CI green, no open bot review threads, base clean.
 - Rebase or conflict-resolve on the existing branch. Never leave **Update branch** as a human click. Do not open a superseding PR for Dependabot or in-flight fixes.
-- Wait for Greptile and Codex on one SHA, then one remediation push, then one reconfirm. Do not push-per-comment.
-- Erdos-org Dependabot is Will-merge: report ready, do not merge yourself. Greptile 5/5 when it reviewed; "no reviewable files" counts as clear. Socket unsafe = hold.
+- Wait for every participating review bot to finish on one SHA, then one remediation push, then one reconfirm. A bot that never started is not participating. Do not push-per-comment.
+- Erdos-org Dependabot is human-merge (agents do not merge): report ready. Greptile 5/5 when it reviewed; "no reviewable files" counts as clear. Socket unsafe = hold.
 
 ### Verify
 

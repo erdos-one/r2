@@ -8,7 +8,7 @@ R2 is a CLI and Go library for working with Cloudflare's R2 Storage service. It 
 
 ## Process
 
-Process, merge-ready, and verify rules live in [`AGENTS.md`](AGENTS.md) (**Process**). Do not fork a second dialect here.
+Process, merge-ready, and verify rules live in [`AGENTS.md`](AGENTS.md) (**Process**).
 
 ## Development Commands
 
